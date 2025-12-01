@@ -3,8 +3,9 @@ using Unity.Netcode;
 
 public class NetworkBootstrap : MonoBehaviour
 {
-    // Set this in the Inspector before building:
-    public bool StartAsHost = true; // host = board, client = tablet
+    // - Host (board) build: true
+    // - Tablet/client build: false
+    public bool StartAsHost = true;
 
     private void Start()
     {

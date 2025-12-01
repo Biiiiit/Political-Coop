@@ -1,4 +1,3 @@
-// Scripts/Game/GameManager.cs
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
@@ -7,14 +6,17 @@ public class GameManager : NetworkBehaviour
 {
     public static GameManager Instance { get; private set; }
 
+    // clientId -> role
     private readonly Dictionary<ulong, Role> _playerRoles = new();
+    // clientId -> sector state
+    private readonly Dictionary<ulong, SectorState> _sectorStates = new();
+    // queue of available roles
     private readonly Queue<Role> _availableRoles = new();
 
     public BoardState BoardState { get; private set; }
 
     private void Awake()
     {
-        // Simple singleton
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -24,20 +26,19 @@ public class GameManager : NetworkBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // Initialize roles queue
+        // fill role queue
         _availableRoles.Enqueue(Role.Farming);
         _availableRoles.Enqueue(Role.Industry);
         _availableRoles.Enqueue(Role.Housing);
         _availableRoles.Enqueue(Role.Nature);
 
-        BoardState = new BoardState(turnNumber: 1, crisisLevel: 0);
+        BoardState = new BoardState(turnNumber: 1, crisisLevel: 0, phase: Phase.Lobby);
     }
 
     public override void OnNetworkSpawn()
     {
-        if (!IsServer) return; // only host/server does this
+        if (!IsServer) return;
 
-        // Subscribe to Netcode events
         NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
         NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
 
@@ -54,7 +55,7 @@ public class GameManager : NetworkBehaviour
 
     private void OnClientConnected(ulong clientId)
     {
-        // Host itself also triggers this; we treat host as "board", not a role player
+        // Host itself also triggers this; treat host as board, not role player
         if (clientId == NetworkManager.Singleton.LocalClientId)
         {
             Debug.Log($"[GameManager] Host connected as client {clientId} (board).");
@@ -68,9 +69,11 @@ public class GameManager : NetworkBehaviour
         }
 
         _playerRoles[clientId] = roleToAssign;
+        _sectorStates[clientId] = new SectorState(roleToAssign);
+
         Debug.Log($"[GameManager] Assigned {roleToAssign} to client {clientId}");
 
-        // Tell that specific client their role
+        // tell that specific client its role
         SendRoleToClientClientRpc(roleToAssign, new ClientRpcParams
         {
             Send = new ClientRpcSendParams
@@ -79,8 +82,20 @@ public class GameManager : NetworkBehaviour
             }
         });
 
-        // Optionally broadcast board state once they join
+        // send initial board + sector state to that client
         BroadcastBoardStateToClient(clientId);
+
+        var sector = _sectorStates[clientId];
+        SendSectorStateToClientClientRpc(
+            sector.Role,
+            sector.ResourceLevel,
+            new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams
+                {
+                    TargetClientIds = new[] { clientId }
+                }
+            });
     }
 
     private void OnClientDisconnected(ulong clientId)
@@ -92,59 +107,141 @@ public class GameManager : NetworkBehaviour
 
             if (role != Role.None)
             {
-                _availableRoles.Enqueue(role); // return role to pool
+                _availableRoles.Enqueue(role);
             }
+        }
+
+        if (_sectorStates.ContainsKey(clientId))
+        {
+            _sectorStates.Remove(clientId);
         }
     }
 
     [ClientRpc]
     private void SendRoleToClientClientRpc(Role role, ClientRpcParams clientRpcParams = default)
     {
-        // This runs on that specific client.
         if (PlayerRoleController.LocalInstance != null)
         {
             PlayerRoleController.LocalInstance.SetRole(role);
         }
         else
         {
-            Debug.LogWarning("[GameManager] LocalInstance of PlayerRoleController is null when assigning role.");
+            Debug.LogWarning("[GameManager] Local PlayerRoleController not present when assigning role.");
         }
     }
 
     private void BroadcastBoardStateToClient(ulong clientId)
     {
-        BroadcastBoardStateClientRpc(BoardState.TurnNumber, BoardState.CrisisLevel, new ClientRpcParams
-        {
-            Send = new ClientRpcSendParams
+        BroadcastBoardStateClientRpc(
+            BoardState.TurnNumber,
+            BoardState.CrisisLevel,
+            (int)BoardState.Phase,
+            new ClientRpcParams
             {
-                TargetClientIds = new[] { clientId }
-            }
-        });
+                Send = new ClientRpcSendParams
+                {
+                    TargetClientIds = new[] { clientId }
+                }
+            });
     }
 
     [ClientRpc]
-    private void BroadcastBoardStateClientRpc(int turnNumber, int crisisLevel, ClientRpcParams clientRpcParams = default)
+    private void BroadcastBoardStateClientRpc(
+        int turnNumber,
+        int crisisLevel,
+        int phaseInt,
+        ClientRpcParams clientRpcParams = default)
     {
-        // Called on every client chosen in clientRpcParams (or all, if none).
-        Debug.Log($"[Client] Board state updated: Turn {turnNumber}, Crisis {crisisLevel}");
+        Phase phase = (Phase)phaseInt;
 
-        // BoardController can react to this if it exists
+        Debug.Log($"[Client] Board state: Turn {turnNumber}, Crisis {crisisLevel}, Phase {phase}");
+
         if (BoardController.LocalInstance != null)
         {
-            BoardController.LocalInstance.OnBoardStateUpdated(turnNumber, crisisLevel);
+            BoardController.LocalInstance.OnBoardStateUpdated(turnNumber, crisisLevel, phase);
         }
     }
 
-    // Example: advance turn from host/board
-    [ServerRpc(RequireOwnership = false)]
-    public void AdvanceTurnServerRpc()
+    [ClientRpc]
+    private void SendSectorStateToClientClientRpc(
+        Role role,
+        int resourceLevel,
+        ClientRpcParams clientRpcParams = default)
     {
-        BoardState.TurnNumber++;
-        BoardState.CrisisLevel++; // simple fake logic
+        if (PlayerRoleController.LocalInstance != null)
+        {
+            PlayerRoleController.LocalInstance.OnSectorStateUpdated(role, resourceLevel);
+        }
+    }
 
-        Debug.Log($"[GameManager] Turn -> {BoardState.TurnNumber}, Crisis -> {BoardState.CrisisLevel}");
+    // Called by tablets via PlayerRoleController.RequestPlayCard
+    [ServerRpc(RequireOwnership = false)]
+    public void PlayCardServerRpc(ulong clientId, string cardId)
+    {
+        if (!_playerRoles.TryGetValue(clientId, out var role))
+        {
+            Debug.LogWarning($"[GameManager] Unknown client {clientId} tried to play a card.");
+            return;
+        }
 
-        // Send to all clients
-        BroadcastBoardStateClientRpc(BoardState.TurnNumber, BoardState.CrisisLevel);
+        Debug.Log($"[GameManager] Client {clientId} ({role}) played card {cardId}");
+
+        // Example: card effect -> global + per-role
+        BoardState.CrisisLevel++;
+
+        if (_sectorStates.TryGetValue(clientId, out var sector))
+        {
+            sector.ResourceLevel++;
+            Debug.Log($"[GameManager] {role} resource now {sector.ResourceLevel}");
+
+            SendSectorStateToClientClientRpc(
+                sector.Role,
+                sector.ResourceLevel,
+                new ClientRpcParams
+                {
+                    Send = new ClientRpcSendParams
+                    {
+                        TargetClientIds = new[] { clientId }
+                    }
+                });
+        }
+
+        // notify everybody about global board change
+        BroadcastBoardStateClientRpc(
+            BoardState.TurnNumber,
+            BoardState.CrisisLevel,
+            (int)BoardState.Phase);
+    }
+
+    // Host advances to next phase / turn
+    [ServerRpc(RequireOwnership = false)]
+    public void NextPhaseServerRpc()
+    {
+        switch (BoardState.Phase)
+        {
+            case Phase.Lobby:
+                BoardState.Phase = Phase.Draw;
+                break;
+            case Phase.Draw:
+                BoardState.Phase = Phase.Play;
+                break;
+            case Phase.Play:
+                BoardState.Phase = Phase.Vote;
+                break;
+            case Phase.Vote:
+                BoardState.Phase = Phase.Resolve;
+                break;
+            case Phase.Resolve:
+                BoardState.Phase = Phase.Draw;
+                BoardState.TurnNumber++;
+                break;
+        }
+
+        Debug.Log($"[GameManager] Phase -> {BoardState.Phase}, Turn -> {BoardState.TurnNumber}");
+
+        BroadcastBoardStateClientRpc(
+            BoardState.TurnNumber,
+            BoardState.CrisisLevel,
+            (int)BoardState.Phase);
     }
 }
