@@ -55,7 +55,7 @@ public class GameManager : NetworkBehaviour
 
     private void OnClientConnected(ulong clientId)
     {
-        // Host itself also triggers this; treat host as board, not role player
+        // Host also triggers this; treat host as board, not a role player
         if (clientId == NetworkManager.Singleton.LocalClientId)
         {
             Debug.Log($"[GameManager] Host connected as client {clientId} (board).");
@@ -156,9 +156,16 @@ public class GameManager : NetworkBehaviour
 
         Debug.Log($"[Client] Board state: Turn {turnNumber}, Crisis {crisisLevel}, Phase {phase}");
 
+        // Board (host)
         if (BoardController.LocalInstance != null)
         {
             BoardController.LocalInstance.OnBoardStateUpdated(turnNumber, crisisLevel, phase);
+        }
+
+        // Player (tablet)
+        if (PlayerRoleController.LocalInstance != null)
+        {
+            PlayerRoleController.LocalInstance.OnBoardStateUpdated(turnNumber, crisisLevel, phase);
         }
     }
 

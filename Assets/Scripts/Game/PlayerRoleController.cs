@@ -11,6 +11,8 @@ public class PlayerRoleController : NetworkBehaviour
     public Role Role { get; private set; } = Role.None;
     public int ResourceLevel { get; private set; }
 
+    private Phase currentPhase = Phase.Lobby;
+
     private void Awake()
     {
         if (IsOwner)
@@ -26,7 +28,6 @@ public class PlayerRoleController : NetworkBehaviour
         LocalInstance = this;
         Debug.Log($"[Client {OwnerClientId}] PlayerRoleController spawned.");
 
-        // Try to auto-find UI if not assigned
         if (playerUI == null)
         {
             playerUI = FindFirstObjectByType<PlayerUIController>();
@@ -59,11 +60,24 @@ public class PlayerRoleController : NetworkBehaviour
         }
     }
 
+    public void OnBoardStateUpdated(int turnNumber, int crisisLevel, Phase phase)
+    {
+        if (!IsOwner) return;
+
+        currentPhase = phase;
+        Debug.Log($"[Client {OwnerClientId}] Board state for player: Turn {turnNumber}, Crisis {crisisLevel}, Phase {phase}");
+
+        if (playerUI != null)
+        {
+            playerUI.UpdateBoardState(turnNumber, crisisLevel, phase);
+        }
+    }
+
     private void Update()
     {
         if (!IsOwner) return;
 
-        // Debug: press P on tablet to play card without using the button
+        // Debug key still works, but respects phase.
         if (Keyboard.current != null && Keyboard.current.pKey.wasPressedThisFrame)
         {
             RequestPlayCard("FAKE_CARD_P_KEY");
@@ -73,6 +87,12 @@ public class PlayerRoleController : NetworkBehaviour
     // Called from UI or from debug key
     public void RequestPlayCard(string cardId)
     {
+        if (currentPhase != Phase.Play)
+        {
+            Debug.Log($"[Client {OwnerClientId}] Not in Play phase, cannot play card.");
+            return;
+        }
+
         Debug.Log($"[Client {OwnerClientId}] Requesting to play card {cardId}");
         GameManager.Instance.PlayCardServerRpc(OwnerClientId, cardId);
     }

@@ -3,13 +3,13 @@ using Unity.Netcode;
 
 public class UIModeSwitcher : NetworkBehaviour
 {
-    [Header("Assign these in the Inspector")]
+    [Header("Assign the screens")]
     [SerializeField] private GameObject boardCanvasRoot;
     [SerializeField] private GameObject playerCanvasRoot;
 
     public override void OnNetworkSpawn()
     {
-        // Host = IsServer == true (in your setup, board screen starts as Host)
+        // Host = IsServer == true
         if (IsServer)
         {
             SetBoardMode();
