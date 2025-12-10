@@ -4,45 +4,104 @@ using UnityEngine;
 
 public class DeckManager : MonoBehaviour
 {
-    public List<GameObject> cardPrefabs;
+    [Header("Deck")]
+    public List<GameObject> deck = new List<GameObject>();
 
-    public RectTransform deckPosition;
+    [Header("References")]
     public RectTransform handArea;
 
-    public float duration = 0.4f;
+    [Header("Animation")]
+    public float duration = 0.35f;
+    public float startOffset = 500f;
 
-    public void DrawCard()
+    // --------------------------------------------------
+    // PUBLIC API
+    // --------------------------------------------------
+
+    // Replace the entire deck with a new list
+    public void SetDeck(List<GameObject> newDeck)
     {
-        if (cardPrefabs.Count == 0) return;
-
-        GameObject prefab = cardPrefabs[0];
-        cardPrefabs.RemoveAt(0);
-
-        // Spawn as child of handArea immediately
-        GameObject card = Instantiate(prefab, handArea);
-
-        RectTransform cardRT = card.GetComponent<RectTransform>();
-        cardRT.sizeDelta = new Vector2(280, 449); // tweak to fit
-        cardRT.localScale = Vector3.zero;         // start small
-
-        // Animate the whole prefab
-        StartCoroutine(AnimateCardScale(cardRT));
+        deck = new List<GameObject>(newDeck);
     }
 
-    private IEnumerator AnimateCardScale(RectTransform cardRT)
+    // Add a single card to the deck
+    public void AddCard(GameObject cardPrefab)
     {
-        Vector3 startScale = Vector3.zero;
-        Vector3 endScale = Vector3.one;
+        deck.Add(cardPrefab);
+    }
+
+    // Add multiple cards to the deck
+    public void AddCards(List<GameObject> cards)
+    {
+        deck.AddRange(cards);
+    }
+
+    // Shuffle the deck
+    public void Shuffle()
+    {
+        for (int i = 0; i < deck.Count; i++)
+        {
+            int rand = Random.Range(i, deck.Count);
+            GameObject temp = deck[i];
+            deck[i] = deck[rand];
+            deck[rand] = temp;
+        }
+    }
+
+    // Draw one card
+    public void DrawCard()
+    {
+        if (deck.Count == 0)
+        {
+            Debug.Log("Deck is empty!");
+            return;
+        }
+
+        GameObject prefab = deck[0];
+        deck.RemoveAt(0);
+
+        // Instantiate card in hand area
+        GameObject card = Instantiate(prefab, handArea);
+        RectTransform rt = card.GetComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(280, 449);
+
+        // Hide card before layout snaps it
+        CanvasGroup cg = card.AddComponent<CanvasGroup>();
+        cg.alpha = 0f;
+
+        StartCoroutine(AnimateCardIn(rt, cg));
+    }
+
+    // --------------------------------------------------
+    // ANIMATION
+    // --------------------------------------------------
+
+    private IEnumerator AnimateCardIn(RectTransform rt, CanvasGroup cg)
+    {
+        // wait 1 frame for layout group to place the card
+        yield return null;
+
+        Vector2 finalPos = rt.anchoredPosition;
+
+        Vector2 startPos = finalPos + new Vector2(0, -startOffset);
+        rt.anchoredPosition = startPos;
+
+        cg.alpha = 1f; // reveal AFTER offset is applied
 
         float t = 0f;
+
         while (t < duration)
         {
             t += Time.deltaTime;
-            float p = Mathf.SmoothStep(0, 1, t / duration);
-            cardRT.localScale = Vector3.Lerp(startScale, endScale, p);
+            float p = t / duration;
+
+            // ease-out cubic
+            p = 1f - Mathf.Pow(1f - p, 3f);
+
+            rt.anchoredPosition = Vector2.Lerp(startPos, finalPos, p);
             yield return null;
         }
 
-        cardRT.localScale = endScale;
+        rt.anchoredPosition = finalPos;
     }
 }
