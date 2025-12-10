@@ -13,7 +13,37 @@ public class GameManager : NetworkBehaviour
     // queue of available roles
     private readonly Queue<Role> _availableRoles = new();
 
+    // ====== TURN / PHASE STATE ======
     public BoardState BoardState { get; private set; }
+
+    // One simple record for a played card this turn
+    private class PlayedCard
+    {
+        public string CardId;
+        public ulong ClientId;
+        public Role Role;
+
+        public PlayedCard(string cardId, ulong clientId, Role role)
+        {
+            CardId = cardId;
+            ClientId = clientId;
+            Role = role;
+        }
+    }
+
+    // All cards played in the current turn during Play phase
+    private readonly List<PlayedCard> _playedCardsThisTurn = new();
+
+    // Set of players who have already played a card this turn
+    private readonly HashSet<ulong> _playersWhoPlayedThisTurn = new();
+
+    // Votes: cardId -> (clientId -> voteYes?)
+    private readonly Dictionary<string, Dictionary<ulong, bool>> _votesByCard = new();
+
+    // Convenience
+    private int PlayerCount => _playerRoles.Count;
+
+    // =========================================
 
     private void Awake()
     {
@@ -26,13 +56,18 @@ public class GameManager : NetworkBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // fill role queue
+        // Fill role queue
         _availableRoles.Enqueue(Role.Farming);
         _availableRoles.Enqueue(Role.Industry);
         _availableRoles.Enqueue(Role.Housing);
         _availableRoles.Enqueue(Role.Nature);
 
-        BoardState = new BoardState(turnNumber: 1, crisisLevel: 0, phase: Phase.Lobby);
+        // Initial board state
+        BoardState = new BoardState(
+            turnNumber: 1,
+            crisisLevel: 0,
+            phase: Phase.Lobby
+        );
     }
 
     public override void OnNetworkSpawn()
@@ -53,9 +88,11 @@ public class GameManager : NetworkBehaviour
         NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
     }
 
+    // ================== CONNECTIONS & ROLES ===================
+
     private void OnClientConnected(ulong clientId)
     {
-        // Host also triggers this; treat host as board, not a role player
+        // Host is also a client; treat host as board, not a role player
         if (clientId == NetworkManager.Singleton.LocalClientId)
         {
             Debug.Log($"[GameManager] Host connected as client {clientId} (board).");
@@ -73,7 +110,7 @@ public class GameManager : NetworkBehaviour
 
         Debug.Log($"[GameManager] Assigned {roleToAssign} to client {clientId}");
 
-        // tell that specific client its role
+        // Tell that specific client their role
         SendRoleToClientClientRpc(roleToAssign, new ClientRpcParams
         {
             Send = new ClientRpcSendParams
@@ -82,7 +119,7 @@ public class GameManager : NetworkBehaviour
             }
         });
 
-        // send initial board + sector state to that client
+        // Send initial board + sector state to that client
         BroadcastBoardStateToClient(clientId);
 
         var sector = _sectorStates[clientId];
@@ -115,6 +152,13 @@ public class GameManager : NetworkBehaviour
         {
             _sectorStates.Remove(clientId);
         }
+
+        // Clean up any mid-turn data related to this client
+        _playersWhoPlayedThisTurn.Remove(clientId);
+        foreach (var kvp in _votesByCard)
+        {
+            kvp.Value.Remove(clientId);
+        }
     }
 
     [ClientRpc]
@@ -129,6 +173,8 @@ public class GameManager : NetworkBehaviour
             Debug.LogWarning("[GameManager] Local PlayerRoleController not present when assigning role.");
         }
     }
+
+    // ================== BOARD STATE BROADCASTING ===================
 
     private void BroadcastBoardStateToClient(ulong clientId)
     {
@@ -181,7 +227,64 @@ public class GameManager : NetworkBehaviour
         }
     }
 
-    // Called by tablets via PlayerRoleController.RequestPlayCard
+    // Cards to vote on → broadcast as a single string "id1|id2|id3"
+    [ClientRpc]
+    private void BroadcastCardsToVoteOnClientRpc(
+        string cardsCombined,
+        ClientRpcParams clientRpcParams = default)
+    {
+        if (PlayerRoleController.LocalInstance != null)
+        {
+            PlayerRoleController.LocalInstance.OnCardsToVoteOn(cardsCombined);
+        }
+    }
+
+    // ================== SERVER-SIDE HELPERS ===================
+
+    private void SetPhase(Phase newPhase)
+    {
+        BoardState.Phase = newPhase;
+        Debug.Log($"[GameManager] Phase set to {newPhase}");
+        BroadcastBoardStateClientRpc(BoardState.TurnNumber, BoardState.CrisisLevel, (int)BoardState.Phase);
+    }
+
+    private void ClearTurnRuntimeData()
+    {
+        _playedCardsThisTurn.Clear();
+        _playersWhoPlayedThisTurn.Clear();
+        _votesByCard.Clear();
+    }
+
+    private bool AllPlayersHavePlayed()
+    {
+        if (PlayerCount == 0) return false;
+        return _playersWhoPlayedThisTurn.Count >= PlayerCount;
+    }
+
+    private bool AllVotesComplete()
+    {
+        if (PlayerCount == 0) return false;
+        if (_playedCardsThisTurn.Count == 0) return true; // nothing to vote on
+
+        foreach (var played in _playedCardsThisTurn)
+        {
+            if (!_votesByCard.TryGetValue(played.CardId, out var votesForCard))
+            {
+                return false;
+            }
+
+            if (votesForCard.Count < PlayerCount)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // ================== PUBLIC SERVER RPCs (ACTIONS) ===================
+
+    // Called by tablets when they "play a card" during Play phase
     [ServerRpc(RequireOwnership = false)]
     public void PlayCardServerRpc(ulong clientId, string cardId)
     {
@@ -191,64 +294,200 @@ public class GameManager : NetworkBehaviour
             return;
         }
 
-        Debug.Log($"[GameManager] Client {clientId} ({role}) played card {cardId}");
-
-        // Example: card effect -> global + per-role
-        BoardState.CrisisLevel++;
-
-        if (_sectorStates.TryGetValue(clientId, out var sector))
+        if (BoardState.Phase != Phase.Play)
         {
-            sector.ResourceLevel++;
-            Debug.Log($"[GameManager] {role} resource now {sector.ResourceLevel}");
-
-            SendSectorStateToClientClientRpc(
-                sector.Role,
-                sector.ResourceLevel,
-                new ClientRpcParams
-                {
-                    Send = new ClientRpcSendParams
-                    {
-                        TargetClientIds = new[] { clientId }
-                    }
-                });
+            Debug.Log($"[GameManager] Ignoring PlayCard from {clientId} because phase is {BoardState.Phase}.");
+            return;
         }
 
-        // notify everybody about global board change
-        BroadcastBoardStateClientRpc(
-            BoardState.TurnNumber,
-            BoardState.CrisisLevel,
-            (int)BoardState.Phase);
+        if (_playersWhoPlayedThisTurn.Contains(clientId))
+        {
+            Debug.Log($"[GameManager] Client {clientId} already played a card this turn.");
+            return;
+        }
+
+        var played = new PlayedCard(cardId, clientId, role);
+        _playedCardsThisTurn.Add(played);
+        _playersWhoPlayedThisTurn.Add(clientId);
+
+        Debug.Log($"[GameManager] Client {clientId} ({role}) played card {cardId}.");
+
+        // Simple effect stub (later: real card effects)
+        BoardState.CrisisLevel++;
+        BroadcastBoardStateClientRpc(BoardState.TurnNumber, BoardState.CrisisLevel, (int)BoardState.Phase);
+
+        // Initialize vote container for this card
+        if (!_votesByCard.ContainsKey(cardId))
+        {
+            _votesByCard[cardId] = new Dictionary<ulong, bool>();
+        }
+
+        // Auto-move to Vote if everyone has played
+        if (AllPlayersHavePlayed())
+        {
+            AdvanceFromPlayToVote();
+        }
     }
 
-    // Host advances to next phase / turn
+    // Called by tablets when they vote on a specific card during Vote phase
+    [ServerRpc(RequireOwnership = false)]
+    public void VoteOnCardServerRpc(ulong clientId, string cardId, bool voteYes)
+    {
+        if (BoardState.Phase != Phase.Vote)
+        {
+            Debug.Log($"[GameManager] Ignoring Vote from {clientId} because phase is {BoardState.Phase}.");
+            return;
+        }
+
+        if (!_votesByCard.TryGetValue(cardId, out var votesForCard))
+        {
+            Debug.LogWarning($"[GameManager] Vote received for unknown cardId {cardId}.");
+            return;
+        }
+
+        votesForCard[clientId] = voteYes;
+        Debug.Log($"[GameManager] Client {clientId} voted {(voteYes ? "YES" : "NO")} on card {cardId}.");
+
+        if (AllVotesComplete())
+        {
+            AdvanceFromVoteToResolve();
+        }
+    }
+
+    // Called by host (board) UI to manually advance phase
     [ServerRpc(RequireOwnership = false)]
     public void NextPhaseServerRpc()
     {
+        Debug.Log($"[GameManager] NextPhase requested from phase {BoardState.Phase}");
+
         switch (BoardState.Phase)
         {
             case Phase.Lobby:
-                BoardState.Phase = Phase.Draw;
+                StartNewGameFromLobby();
                 break;
+
             case Phase.Draw:
-                BoardState.Phase = Phase.Play;
+                EnterPlayPhase();
                 break;
+
             case Phase.Play:
-                BoardState.Phase = Phase.Vote;
+                AdvanceFromPlayToVote();
                 break;
+
             case Phase.Vote:
-                BoardState.Phase = Phase.Resolve;
+                AdvanceFromVoteToResolve();
                 break;
+
             case Phase.Resolve:
-                BoardState.Phase = Phase.Draw;
-                BoardState.TurnNumber++;
+                EndOfTurnAndGoToNext();
                 break;
         }
+    }
 
-        Debug.Log($"[GameManager] Phase -> {BoardState.Phase}, Turn -> {BoardState.TurnNumber}");
+    // ================== PHASE TRANSITION IMPLEMENTATIONS ===================
 
-        BroadcastBoardStateClientRpc(
-            BoardState.TurnNumber,
-            BoardState.CrisisLevel,
-            (int)BoardState.Phase);
+    private void StartNewGameFromLobby()
+    {
+        Debug.Log("[GameManager] Starting game from Lobby -> Draw.");
+        ClearTurnRuntimeData();
+        BoardState.TurnNumber = 1;
+        BoardState.CrisisLevel = 0;
+        SetPhase(Phase.Draw);
+
+        OnEnterDrawPhase();
+    }
+
+    private void OnEnterDrawPhase()
+    {
+        Debug.Log("[GameManager] Enter Draw phase.");
+        // Later: deal cards per player here.
+    }
+
+    private void EnterPlayPhase()
+    {
+        Debug.Log("[GameManager] Draw -> Play.");
+        ClearTurnRuntimeData();
+        SetPhase(Phase.Play);
+        // Later: enforce that each player must choose 1 card from their hand.
+    }
+
+    private void AdvanceFromPlayToVote()
+    {
+        Debug.Log("[GameManager] Play -> Vote.");
+        SetPhase(Phase.Vote);
+
+        // Prepare combined string of cardIds to vote on: "id1|id2|id3"
+        string cardsCombined;
+        if (_playedCardsThisTurn.Count == 0)
+        {
+            cardsCombined = string.Empty;
+        }
+        else
+        {
+            var ids = new List<string>(_playedCardsThisTurn.Count);
+            foreach (var played in _playedCardsThisTurn)
+            {
+                ids.Add(played.CardId);
+            }
+
+            cardsCombined = string.Join("|", ids);
+        }
+
+        // Broadcast list of cards to each client so they know what to vote on
+        BroadcastCardsToVoteOnClientRpc(cardsCombined);
+
+        // _votesByCard already initialized in PlayCardServerRpc
+    }
+
+    private void AdvanceFromVoteToResolve()
+    {
+        Debug.Log("[GameManager] Vote -> Resolve.");
+        SetPhase(Phase.Resolve);
+
+        // Immediately resolve in this simple version
+        ResolveCardsAndEndTurn();
+    }
+
+    private void ResolveCardsAndEndTurn()
+    {
+        Debug.Log("[GameManager] Resolving cards...");
+
+        foreach (var played in _playedCardsThisTurn)
+        {
+            bool accepted = true;
+
+            if (_votesByCard.TryGetValue(played.CardId, out var votesForCard))
+            {
+                int yesCount = 0;
+                int noCount = 0;
+                foreach (var v in votesForCard.Values)
+                {
+                    if (v) yesCount++; else noCount++;
+                }
+
+                accepted = yesCount >= noCount;
+            }
+
+            Debug.Log($"[GameManager] Card {played.CardId} by {played.Role} " +
+                      $"is {(accepted ? "ACCEPTED" : "REJECTED")}.");
+
+            // TODO later: apply real card effects if accepted
+        }
+
+        EndOfTurnAndGoToNext();
+    }
+
+    private void EndOfTurnAndGoToNext()
+    {
+        Debug.Log("[GameManager] End of turn. Advancing to next turn.");
+
+        // TODO later: calamity / risk system here
+
+        BoardState.TurnNumber++;
+        ClearTurnRuntimeData();
+
+        // Next turn starts at Draw
+        SetPhase(Phase.Draw);
+        OnEnterDrawPhase();
     }
 }

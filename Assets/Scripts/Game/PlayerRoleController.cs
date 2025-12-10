@@ -1,6 +1,7 @@
+// Assets/Scripts/Game/PlayerRoleController.cs
+using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
-using UnityEngine.InputSystem;
 
 public class PlayerRoleController : NetworkBehaviour
 {
@@ -12,6 +13,9 @@ public class PlayerRoleController : NetworkBehaviour
     public int ResourceLevel { get; private set; }
 
     private Phase currentPhase = Phase.Lobby;
+
+    // Cards this player needs to vote on during Vote phase
+    private readonly List<string> cardsToVoteOn = new();
 
     private void Awake()
     {
@@ -30,7 +34,7 @@ public class PlayerRoleController : NetworkBehaviour
 
         if (playerUI == null)
         {
-            playerUI = FindFirstObjectByType<PlayerUIController>();
+            playerUI = FindObjectOfType<PlayerUIController>();
         }
     }
 
@@ -71,20 +75,50 @@ public class PlayerRoleController : NetworkBehaviour
         {
             playerUI.UpdateBoardState(turnNumber, crisisLevel, phase);
         }
+
+        // When leaving Vote phase, clear remaining pending votes (if any)
+        if (phase != Phase.Vote && cardsToVoteOn.Count > 0)
+        {
+            cardsToVoteOn.Clear();
+        }
+    }
+
+    // Called from GameManager when entering Vote phase
+    // cardsCombined is "id1|id2|id3" or empty string if none
+    public void OnCardsToVoteOn(string cardsCombined)
+    {
+        if (!IsOwner) return;
+
+        cardsToVoteOn.Clear();
+
+        if (!string.IsNullOrEmpty(cardsCombined))
+        {
+            string[] split = cardsCombined.Split('|');
+            cardsToVoteOn.AddRange(split);
+        }
+
+        Debug.Log($"[Client {OwnerClientId}] Received cards to vote on: {string.Join(", ", cardsToVoteOn)}");
+
+        if (playerUI != null)
+        {
+            playerUI.ShowVotePrompt(cardsToVoteOn);
+        }
     }
 
     private void Update()
     {
         if (!IsOwner) return;
 
-        // Debug key still works, but respects phase.
-        if (Keyboard.current != null && Keyboard.current.pKey.wasPressedThisFrame)
+        // Debug: press P in Play phase to "play a card" (useful on PC)
+        if (Input.GetKeyDown(KeyCode.P) && currentPhase == Phase.Play)
         {
             RequestPlayCard("FAKE_CARD_P_KEY");
         }
+
+        // Voting is done via UI buttons now
     }
 
-    // Called from UI or from debug key
+    // Called from UI or from debug key in Play phase
     public void RequestPlayCard(string cardId)
     {
         if (currentPhase != Phase.Play)
@@ -95,5 +129,34 @@ public class PlayerRoleController : NetworkBehaviour
 
         Debug.Log($"[Client {OwnerClientId}] Requesting to play card {cardId}");
         GameManager.Instance.PlayCardServerRpc(OwnerClientId, cardId);
+    }
+
+    // Called from PlayerUIController vote buttons
+    public void VoteOnAllCardsFromUI(bool yes)
+    {
+        if (currentPhase != Phase.Vote)
+        {
+            Debug.Log($"[Client {OwnerClientId}] Not in Vote phase, ignoring vote.");
+            return;
+        }
+
+        if (cardsToVoteOn.Count == 0)
+        {
+            Debug.Log($"[Client {OwnerClientId}] No cards to vote on.");
+            return;
+        }
+
+        foreach (var cardId in cardsToVoteOn)
+        {
+            Debug.Log($"[Client {OwnerClientId}] Voting {(yes ? "YES" : "NO")} on {cardId}");
+            GameManager.Instance.VoteOnCardServerRpc(OwnerClientId, cardId, yes);
+        }
+
+        cardsToVoteOn.Clear();
+
+        if (playerUI != null)
+        {
+            playerUI.ShowAfterVoteMessage();
+        }
     }
 }
