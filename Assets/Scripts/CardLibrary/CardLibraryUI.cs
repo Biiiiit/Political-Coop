@@ -5,25 +5,43 @@ using UnityEngine;
 
 public class CardLibraryUI : MonoBehaviour
 {
+    // Which tab is active
+    private enum FilterMode
+    {
+        All,
+        Policy,
+        Project,
+        ShortTerm
+    }
+
     [Header("Data")]
     [SerializeField] private List<CardData> allCards = new List<CardData>();
 
     [Header("Available Cards UI (left)")]
-    [SerializeField] private RectTransform availableContent;  // ScrollView_Available/Viewport/AvailableContent
-    [SerializeField] private GameObject cardItemPrefab;       // CardItem prefab with CardItemView
+    [SerializeField] private RectTransform availableContent;      // ScrollView_Available/Viewport/AvailableContent
+    [SerializeField] private GameObject cardItemPrefab;           // CardItem prefab with CardItemView
 
     [Header("Chosen Cards UI (right)")]
-    [SerializeField] private RectTransform chosenContent;     // ScrollView_Chosen/Viewport/ChosenContent
+    [SerializeField] private RectTransform chosenContent;         // ScrollView_Chosen/Viewport/ChosenContent
     [SerializeField] private TextMeshProUGUI projectsCountText;
     [SerializeField] private TextMeshProUGUI policiesCountText;
     [SerializeField] private TextMeshProUGUI shortTermCountText;
 
-    // layout settings (you can tweak these in inspector if you want)
-    [Header("Layout")]
-    [SerializeField] private float verticalSpacing = 10f;
-    [SerializeField] private float topPadding = 10f;
+    [Header("Grid layout (LEFT)")]
+    [SerializeField] private int gridColumns = 3;
+    [SerializeField] private float gridHorizontalSpacing = 10f;
+    [SerializeField] private float gridVerticalSpacing = 10f;
+    [SerializeField] private float gridTopPadding = 10f;
+    [SerializeField] private float gridLeftPadding = 10f;
 
+    [Header("List layout (RIGHT)")]
+    [SerializeField] private float listVerticalSpacing = 10f;
+    [SerializeField] private float listTopPadding = 10f;
+
+    // Internal state
     private readonly List<CardData> chosenCards = new List<CardData>();
+    private readonly HashSet<string> chosenIds = new HashSet<string>();
+    private FilterMode currentFilter = FilterMode.All;
 
     private void Start()
     {
@@ -32,7 +50,7 @@ public class CardLibraryUI : MonoBehaviour
             CreateDummyData();
         }
 
-        RefreshAvailableList(allCards);
+        RefreshAvailableList();
         RefreshChosenList();
     }
 
@@ -73,10 +91,10 @@ public class CardLibraryUI : MonoBehaviour
     }
 
     // =========================================================
-    //  Available list (left)
+    //  AVAILABLE LIST (LEFT) – GRID LAYOUT
     // =========================================================
 
-    private void RefreshAvailableList(IEnumerable<CardData> cards)
+    private void RefreshAvailableList()
     {
         if (availableContent == null || cardItemPrefab == null)
         {
@@ -84,13 +102,32 @@ public class CardLibraryUI : MonoBehaviour
             return;
         }
 
-        // Clear existing children
-        for (int i = availableContent.childCount - 1; i >= 0; i--)
+        // Determine which cards we show, based on filter and which are NOT chosen
+        IEnumerable<CardData> cards = allCards;
+
+        switch (currentFilter)
         {
-            Destroy(availableContent.GetChild(i).gameObject);
+            case FilterMode.Policy:
+                cards = cards.Where(c => c.category == CardCategory.Policy);
+                break;
+            case FilterMode.Project:
+                cards = cards.Where(c => c.category == CardCategory.Project);
+                break;
+            case FilterMode.ShortTerm:
+                cards = cards.Where(c => c.category == CardCategory.ShortTerm);
+                break;
+            case FilterMode.All:
+            default:
+                break;
         }
 
-        // We need the height of a single card
+        cards = cards.Where(c => !chosenIds.Contains(c.id));
+
+        // Clear existing children
+        for (int i = availableContent.childCount - 1; i >= 0; i--)
+            Destroy(availableContent.GetChild(i).gameObject);
+
+        float cardWidth  = GetCardWidth();
         float cardHeight = GetCardHeight();
         int index = 0;
 
@@ -106,18 +143,16 @@ public class CardLibraryUI : MonoBehaviour
 
             view.Init(card, this, isChosenList: false);
 
-            // Manually position the card under the previous one
             var rt = go.GetComponent<RectTransform>();
-            LayoutCard(rt, availableContent, index, cardHeight);
+            LayoutGridCard(rt, index, cardWidth, cardHeight);
             index++;
         }
 
-        // Set the content height so scrolling works
-        SetContentHeight(availableContent, index, cardHeight);
+        SetGridContentHeight(availableContent, index, cardHeight);
     }
 
     // =========================================================
-    //  Chosen list (right)
+    //  CHOSEN LIST (RIGHT) – VERTICAL LIST
     // =========================================================
 
     private void RefreshChosenList()
@@ -129,9 +164,7 @@ public class CardLibraryUI : MonoBehaviour
         }
 
         for (int i = chosenContent.childCount - 1; i >= 0; i--)
-        {
             Destroy(chosenContent.GetChild(i).gameObject);
-        }
 
         float cardHeight = GetCardHeight();
         int index = 0;
@@ -149,46 +182,81 @@ public class CardLibraryUI : MonoBehaviour
             view.Init(card, this, isChosenList: true);
 
             var rt = go.GetComponent<RectTransform>();
-            LayoutCard(rt, chosenContent, index, cardHeight);
+            LayoutListCard(rt, index, cardHeight);
             index++;
         }
 
-        SetContentHeight(chosenContent, index, cardHeight);
+        SetListContentHeight(chosenContent, index, cardHeight);
         UpdateCounters();
     }
 
     // =========================================================
-    //  Layout helpers (no LayoutGroups used)
+    //  LAYOUT HELPERS (NO LAYOUT GROUPS)
     // =========================================================
 
     private float GetCardHeight()
     {
         var rt = cardItemPrefab.GetComponent<RectTransform>();
-        return rt != null ? rt.rect.height : 100f;
+        return rt != null ? rt.rect.height : 150f;
     }
 
-    private void LayoutCard(RectTransform cardRT, RectTransform parentContent, int index, float cardHeight)
+    private float GetCardWidth()
     {
-        // Stretch horizontally, stick to top
+        var rt = cardItemPrefab.GetComponent<RectTransform>();
+        return rt != null ? rt.rect.width : 100f;
+    }
+
+    // LEFT GRID
+    private void LayoutGridCard(RectTransform cardRT, int index, float cardWidth, float cardHeight)
+    {
+        int col = index % Mathf.Max(1, gridColumns);
+        int row = index / Mathf.Max(1, gridColumns);
+
+        cardRT.anchorMin = new Vector2(0f, 1f);
+        cardRT.anchorMax = new Vector2(0f, 1f);
+        cardRT.pivot     = new Vector2(0f, 1f);
+
+        cardRT.sizeDelta = new Vector2(cardWidth, cardHeight);
+
+        float x = gridLeftPadding + col * (cardWidth + gridHorizontalSpacing);
+        float y = -(gridTopPadding + row * (cardHeight + gridVerticalSpacing));
+        cardRT.anchoredPosition = new Vector2(x, y);
+    }
+
+    private void SetGridContentHeight(RectTransform content, int count, float cardHeight)
+    {
+        int cols = Mathf.Max(1, gridColumns);
+        int rows = Mathf.CeilToInt(count / (float)cols);
+
+        float height = gridTopPadding + rows * (cardHeight + gridVerticalSpacing);
+        if (height < 0) height = 0;
+
+        Vector2 size = content.sizeDelta;
+        size.y = height;
+        content.sizeDelta = size;
+    }
+
+    // RIGHT LIST
+    private void LayoutListCard(RectTransform cardRT, int index, float cardHeight)
+    {
         cardRT.anchorMin = new Vector2(0f, 1f);
         cardRT.anchorMax = new Vector2(1f, 1f);
         cardRT.pivot     = new Vector2(0.5f, 1f);
 
-        // Left/right padding inside content
         float leftPadding  = 10f;
         float rightPadding = 10f;
 
-        cardRT.offsetMin = new Vector2(leftPadding, 0f);   // left
-        cardRT.offsetMax = new Vector2(-rightPadding, 0f); // right
+        cardRT.offsetMin = new Vector2(leftPadding, 0f);
+        cardRT.offsetMax = new Vector2(-rightPadding, 0f);
         cardRT.sizeDelta = new Vector2(cardRT.sizeDelta.x, cardHeight);
 
-        float y = -(topPadding + index * (cardHeight + verticalSpacing));
+        float y = -(listTopPadding + index * (cardHeight + listVerticalSpacing));
         cardRT.anchoredPosition = new Vector2(0f, y);
     }
 
-    private void SetContentHeight(RectTransform content, int count, float cardHeight)
+    private void SetListContentHeight(RectTransform content, int count, float cardHeight)
     {
-        float height = topPadding + count * (cardHeight + verticalSpacing);
+        float height = listTopPadding + count * (cardHeight + listVerticalSpacing);
         if (height < 0) height = 0;
 
         Vector2 size = content.sizeDelta;
@@ -197,32 +265,37 @@ public class CardLibraryUI : MonoBehaviour
     }
 
     // =========================================================
-    //  Click handlers (called from CardItemView)
+    //  CLICK HANDLERS
     // =========================================================
 
+    // Left → Right
     public void OnCardClickedFromAvailable(CardData data)
     {
         if (data == null) return;
 
-        if (!chosenCards.Any(c => c.id == data.id))
+        if (chosenIds.Add(data.id))
         {
             chosenCards.Add(data);
             RefreshChosenList();
+            RefreshAvailableList();   // remove from left
         }
     }
 
+    // Right → Left
     public void OnCardClickedFromChosen(CardData data)
     {
         if (data == null) return;
 
-        if (chosenCards.RemoveAll(c => c.id == data.id) > 0)
+        if (chosenIds.Remove(data.id))
         {
-            RefreshChosenList();
+            chosenCards.RemoveAll(c => c.id == data.id);
+            RefreshChosenList();      // remove from right
+            RefreshAvailableList();   // show back on left
         }
     }
 
     // =========================================================
-    //  Counters
+    //  COUNTERS
     // =========================================================
 
     private void UpdateCounters()
@@ -242,35 +315,40 @@ public class CardLibraryUI : MonoBehaviour
     }
 
     // =========================================================
-    //  Filter buttons (tabs)
+    //  FILTER BUTTONS (TABS)
     // =========================================================
 
     public void ShowAll()
     {
-        RefreshAvailableList(allCards);
+        currentFilter = FilterMode.All;
+        RefreshAvailableList();
     }
 
     public void ShowPolicies()
     {
-        RefreshAvailableList(allCards.Where(c => c.category == CardCategory.Policy));
+        currentFilter = FilterMode.Policy;
+        RefreshAvailableList();
     }
 
     public void ShowProjects()
     {
-        RefreshAvailableList(allCards.Where(c => c.category == CardCategory.Project));
+        currentFilter = FilterMode.Project;
+        RefreshAvailableList();
     }
 
     public void ShowShortTerm()
     {
-        RefreshAvailableList(allCards.Where(c => c.category == CardCategory.ShortTerm));
+        currentFilter = FilterMode.ShortTerm;
+        RefreshAvailableList();
     }
 
-    // Optionally override dummy data
+    // Optional: override dummy data externally
     public void SetCards(List<CardData> cards)
     {
         allCards = cards ?? new List<CardData>();
-        RefreshAvailableList(allCards);
         chosenCards.Clear();
+        chosenIds.Clear();
         RefreshChosenList();
+        RefreshAvailableList();
     }
 }
