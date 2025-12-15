@@ -3,7 +3,7 @@ using TMPro;
 using UnityEngine.UI;
 using System.Collections.Generic;
 
-public class RiskManager : MonoBehaviour
+public class RiskCreationManager : MonoBehaviour
 {
     [Header("Panels")]
     public GameObject createRiskPanel;
