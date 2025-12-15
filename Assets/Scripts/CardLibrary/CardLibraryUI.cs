@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+
 
 public class CardLibraryUI : MonoBehaviour
 {
@@ -38,9 +40,29 @@ public class CardLibraryUI : MonoBehaviour
     [SerializeField] private float listVerticalSpacing = 10f;
     [SerializeField] private float listTopPadding = 10f;
 
+    [Header("Drag & Drop")]
+    [SerializeField] private Canvas mainCanvas;                  // your UI Canvas
+    [SerializeField] private RectTransform leftDropArea;         // e.g. LeftPanel or left ScrollView
+    [SerializeField] private RectTransform rightDropArea;        // e.g. RightPanel or right ScrollView
+
+    [Header("Limits")]
+    [SerializeField] private int projectsLimit   = 20;
+    [SerializeField] private int policiesLimit   = 40;
+    [SerializeField] private int shortTermLimit  = 40;
+
+    [Header("Counter Colors")]
+    [SerializeField] private Color belowLimitColor      = Color.red;
+    [SerializeField] private Color atOrAboveLimitColor  = Color.green;
+
+    [Header("Navigation")]
+    [SerializeField] private string backSceneName;       
+    [SerializeField] private string proceedSceneName; 
+    [SerializeField] private bool requireCardLimitsToProceed = true;
+    public Canvas MainCanvas => mainCanvas;
+
     // Internal state
     private readonly List<CardData> chosenCards = new List<CardData>();
-    private readonly HashSet<string> chosenIds = new HashSet<string>();
+    private readonly HashSet<string> chosenIds = new HashSet<string>();   // fast membership check
     private FilterMode currentFilter = FilterMode.All;
 
     private void Start()
@@ -102,9 +124,8 @@ public class CardLibraryUI : MonoBehaviour
             return;
         }
 
-        // Determine which cards we show, based on filter and which are NOT chosen
+        // Filter by tab
         IEnumerable<CardData> cards = allCards;
-
         switch (currentFilter)
         {
             case FilterMode.Policy:
@@ -121,9 +142,10 @@ public class CardLibraryUI : MonoBehaviour
                 break;
         }
 
+        // Only cards that are NOT already chosen
         cards = cards.Where(c => !chosenIds.Contains(c.id));
 
-        // Clear existing children
+        // Clear children
         for (int i = availableContent.childCount - 1; i >= 0; i--)
             Destroy(availableContent.GetChild(i).gameObject);
 
@@ -209,8 +231,9 @@ public class CardLibraryUI : MonoBehaviour
     // LEFT GRID
     private void LayoutGridCard(RectTransform cardRT, int index, float cardWidth, float cardHeight)
     {
-        int col = index % Mathf.Max(1, gridColumns);
-        int row = index / Mathf.Max(1, gridColumns);
+        int cols = Mathf.Max(1, gridColumns);
+        int col = index % cols;
+        int row = index / cols;
 
         cardRT.anchorMin = new Vector2(0f, 1f);
         cardRT.anchorMax = new Vector2(0f, 1f);
@@ -265,7 +288,34 @@ public class CardLibraryUI : MonoBehaviour
     }
 
     // =========================================================
-    //  CLICK HANDLERS
+    //  DRAG & DROP – called from CardItemView
+    // =========================================================
+
+    public void HandleCardDrop(CardData data, bool fromChosenList, Vector2 screenPosition)
+    {
+        if (mainCanvas == null || leftDropArea == null || rightDropArea == null || data == null)
+            return;
+
+        bool overLeft = RectTransformUtility.RectangleContainsScreenPoint(
+            leftDropArea, screenPosition, mainCanvas.worldCamera);
+        bool overRight = RectTransformUtility.RectangleContainsScreenPoint(
+            rightDropArea, screenPosition, mainCanvas.worldCamera);
+
+        // Left -> Right
+        if (!fromChosenList && overRight)
+        {
+            OnCardClickedFromAvailable(data);
+        }
+        // Right -> Left
+        else if (fromChosenList && overLeft)
+        {
+            OnCardClickedFromChosen(data);
+        }
+        // else dropped somewhere else → ignore
+    }
+
+    // =========================================================
+    //  CLICK HANDLERS (also used by drag-drop)
     // =========================================================
 
     // Left → Right
@@ -273,11 +323,11 @@ public class CardLibraryUI : MonoBehaviour
     {
         if (data == null) return;
 
-        if (chosenIds.Add(data.id))
+        if (chosenIds.Add(data.id))          // only if not already chosen
         {
             chosenCards.Add(data);
             RefreshChosenList();
-            RefreshAvailableList();   // remove from left
+            RefreshAvailableList();          // remove from left
         }
     }
 
@@ -289,8 +339,8 @@ public class CardLibraryUI : MonoBehaviour
         if (chosenIds.Remove(data.id))
         {
             chosenCards.RemoveAll(c => c.id == data.id);
-            RefreshChosenList();      // remove from right
-            RefreshAvailableList();   // show back on left
+            RefreshChosenList();             // remove from right
+            RefreshAvailableList();          // show back on left
         }
     }
 
@@ -305,13 +355,22 @@ public class CardLibraryUI : MonoBehaviour
         int shortTerm = chosenCards.Count(c => c.category == CardCategory.ShortTerm);
 
         if (projectsCountText != null)
-            projectsCountText.text = $"Projects {projects}/20";
+        {
+            projectsCountText.text = $"Projects {projects}/{projectsLimit}";
+            projectsCountText.color = projects >= projectsLimit ? atOrAboveLimitColor : belowLimitColor;
+        }
 
         if (policiesCountText != null)
-            policiesCountText.text = $"Policies {policies}/40";
+        {
+            policiesCountText.text = $"Policies {policies}/{policiesLimit}";
+            policiesCountText.color = policies >= policiesLimit ? atOrAboveLimitColor : belowLimitColor;
+        }
 
         if (shortTermCountText != null)
-            shortTermCountText.text = $"Short-term {shortTerm}/40";
+        {
+            shortTermCountText.text = $"Short-term {shortTerm}/{shortTermLimit}";
+            shortTermCountText.color = shortTerm >= shortTermLimit ? atOrAboveLimitColor : belowLimitColor;
+        }
     }
 
     // =========================================================
@@ -342,13 +401,61 @@ public class CardLibraryUI : MonoBehaviour
         RefreshAvailableList();
     }
 
-    // Optional: override dummy data externally
     public void SetCards(List<CardData> cards)
     {
         allCards = cards ?? new List<CardData>();
         chosenCards.Clear();
         chosenIds.Clear();
+
         RefreshChosenList();
         RefreshAvailableList();
+    }
+
+     // =========================================================
+    //  Navigation buttons
+    // =========================================================
+
+    public void OnBackButtonPressed()
+    {
+        if (!string.IsNullOrEmpty(backSceneName))
+        {
+            // When you have your previous scene, put its name in backSceneName
+            SceneManager.LoadScene(backSceneName);
+        }
+        else
+        {
+            Debug.Log("Back button pressed – no backSceneName configured yet.");
+        }
+    }
+
+    public void OnProceedButtonPressed()
+    {
+        if (requireCardLimitsToProceed && !AreLimitsSatisfied())
+        {
+            Debug.LogWarning("Cannot proceed: card limits not satisfied yet.");
+            // Here later you can show a popup or message to the player
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(proceedSceneName))
+        {
+            // When you have your next scene, put its name in proceedSceneName
+            SceneManager.LoadScene(proceedSceneName);
+        }
+        else
+        {
+            Debug.Log("Proceed button pressed – no proceedSceneName configured yet.");
+        }
+    }
+
+    private bool AreLimitsSatisfied()
+    {
+        int projects  = chosenCards.Count(c => c.category == CardCategory.Project);
+        int policies  = chosenCards.Count(c => c.category == CardCategory.Policy);
+        int shortTerm = chosenCards.Count(c => c.category == CardCategory.ShortTerm);
+
+        return projects  >= projectsLimit
+            && policies  >= policiesLimit
+            && shortTerm >= shortTermLimit;
     }
 }
