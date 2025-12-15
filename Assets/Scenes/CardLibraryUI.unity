@@ -4265,6 +4265,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1778919585118536755, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+      propertyPath: backSceneName
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 1778919585118536755, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+      propertyPath: createCardSceneName
+      value: AssetMenu
+      objectReference: {fileID: 0}
+    - target: {fileID: 2001997172099877721, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2001997172099877721, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2001997172099877721, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2097666136749553475, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -4299,6 +4319,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3336381327721063928, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
       propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3386466748507797283, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3386466748507797283, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3386466748507797283, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+      propertyPath: m_SizeDelta.x
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4271755570675173176, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
@@ -4385,6 +4417,34 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -0.0003037713
       objectReference: {fileID: 0}
+    - target: {fileID: 8140826318434804493, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8140826318434804493, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8140826318434804493, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1073818362169724625}
+    - target: {fileID: 8140826318434804493, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8140826318434804493, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: OnCreateNewCardButtonPressed
+      objectReference: {fileID: 0}
+    - target: {fileID: 8140826318434804493, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: CardLibraryUI, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 8140826318434804493, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     - target: {fileID: 8187077074295269927, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -0.000579834
@@ -4394,6 +4454,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+--- !u!114 &1073818362169724625 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1778919585118536755, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+  m_PrefabInstance: {fileID: 1073818362169724624}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 778bc090806f45f40919e3781cdc9f76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CardLibraryUI
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

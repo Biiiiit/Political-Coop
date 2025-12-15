@@ -55,8 +55,9 @@ public class CardLibraryUI : MonoBehaviour
     [SerializeField] private Color atOrAboveLimitColor  = Color.green;
 
     [Header("Navigation")]
-    [SerializeField] private string backSceneName;       
-    [SerializeField] private string proceedSceneName; 
+    [SerializeField] private string backSceneName;
+    [SerializeField] private string proceedSceneName;
+    [SerializeField] private string createCardSceneName;      // NEW: scene for Create New Card
     [SerializeField] private bool requireCardLimitsToProceed = true;
     public Canvas MainCanvas => mainCanvas;
 
@@ -447,6 +448,18 @@ public class CardLibraryUI : MonoBehaviour
             Debug.Log("Proceed button pressed – no proceedSceneName configured yet.");
         }
     }
+    
+    public void OnCreateNewCardButtonPressed()
+{
+    if (!string.IsNullOrEmpty(createCardSceneName))
+    {
+        SceneManager.LoadScene(createCardSceneName);
+    }
+    else
+    {
+        Debug.Log("Create New Card button pressed – no createCardSceneName configured yet.");
+    }
+}
 
     private bool AreLimitsSatisfied()
     {
