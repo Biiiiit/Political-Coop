@@ -8,12 +8,15 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 0
+  - enabled: 1
     path: Assets/Scenes/Screens.unity
     guid: 78cef435e1f66e14ea7f9149bad73149
   - enabled: 1
     path: Assets/Scenes/CardLibraryUI.unity
     guid: bc109b46be6a775448ed3b6695e5c42d
+  - enabled: 1
+    path: Assets/Scenes/AssetMenu.unity
+    guid: 767fa4486e5d1f7418f5c4fecc932ced
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
