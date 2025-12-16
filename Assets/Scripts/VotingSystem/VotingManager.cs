@@ -1,56 +1,40 @@
-using Unity.Netcode;
 using UnityEngine;
+using TMPro; // <--- Dit is belangrijk voor TextMeshPro
 using System.Collections.Generic;
 
-public class VotingManager : NetworkBehaviour
+public class VotingManager : MonoBehaviour
 {
-    public static VotingManager Instance;
+    public TMP_Text resultsText; // <--- Gebruik TMP_Text i.p.v. Text
+    private List<string> votes = new List<string>();
 
-    public NetworkList<CardProposalNetwork> Proposals;
-    private Dictionary<int, Dictionary<ulong, bool>> votes =
-        new Dictionary<int, Dictionary<ulong, bool>>();
+    // Naam van de speler, kan later per kaart aangepast worden
+    public string playerName = "Player1";
 
-    private void Awake()
+    // Methode voor Yes stemmen
+    public void VoteYes()
     {
-        Instance = this;
-        Proposals = new NetworkList<CardProposalNetwork>();
+        string vote = playerName + " voted Yes";
+        votes.Add(vote);
+        UpdateResults();
+        Debug.Log(vote);
     }
 
-    public override void OnNetworkSpawn()
+    // Methode voor No stemmen
+    public void VoteNo()
     {
-        if (IsServer)
+        string vote = playerName + " voted No";
+        votes.Add(vote);
+        UpdateResults();
+        Debug.Log(vote);
+    }
+
+    // Update de resultaten in de TMP Text
+    void UpdateResults()
+    {
+        resultsText.text = "Results:\n";
+        foreach (string v in votes)
         {
-            CreatePlaceholderProposals();
+            resultsText.text += v + "\n";
         }
-    }
-
-    void CreatePlaceholderProposals()
-    {
-        Proposals.Add(new CardProposalNetwork
-        {
-            proposalId = 0,
-            cardTitle = "Build Water Plant",
-            proposerClientId = 0
-        });
-
-        Proposals.Add(new CardProposalNetwork
-        {
-            proposalId = 1,
-            cardTitle = "Subsidize Farmers",
-            proposerClientId = 1
-        });
-    }
-
-    [ServerRpc(RequireOwnership = false)]
-    public void SubmitVoteServerRpc(int proposalId, bool vote, ulong voterId)
-    {
-        if (!votes.ContainsKey(proposalId))
-        {
-            votes[proposalId] = new Dictionary<ulong, bool>();
-        }
-
-        votes[proposalId][voterId] = vote;
-
-        Debug.Log($"Vote received Proposal {proposalId} | Voter {voterId} | Vote {vote}");
     }
 }
