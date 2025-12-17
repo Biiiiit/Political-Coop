@@ -1,40 +1,59 @@
 using UnityEngine;
-using TMPro; // <--- Dit is belangrijk voor TextMeshPro
+using TMPro;
 using System.Collections.Generic;
 
 public class VotingManager : MonoBehaviour
 {
-    public TMP_Text resultsText; // <--- Gebruik TMP_Text i.p.v. Text
+    public TMP_Text resultsText;
+    public TMP_Text winnerText;
+
     private List<string> votes = new List<string>();
 
-    // Naam van de speler, kan later per kaart aangepast worden
+    private int yesCount = 0;
+    private int noCount = 0;
+
     public string playerName = "Player1";
 
-    // Methode voor Yes stemmen
     public void VoteYes()
     {
-        string vote = playerName + " voted Yes";
-        votes.Add(vote);
+        votes.Add(playerName + " voted Yes");
+        yesCount++;
         UpdateResults();
-        Debug.Log(vote);
     }
 
-    // Methode voor No stemmen
     public void VoteNo()
     {
-        string vote = playerName + " voted No";
-        votes.Add(vote);
+        votes.Add(playerName + " voted No");
+        noCount++;
         UpdateResults();
-        Debug.Log(vote);
     }
 
-    // Update de resultaten in de TMP Text
     void UpdateResults()
     {
-        resultsText.text = "Results:\n";
+        resultsText.text = "Results:\n\n";
+
         foreach (string v in votes)
         {
-            resultsText.text += v + "\n";
+            resultsText.text += v + "\n\n";
+        }
+    }
+
+    public void ShowWinner()
+    {
+        if (yesCount > noCount)
+        {
+            winnerText.text = "Winner: YES";
+            Debug.Log("Winner is YES (" + yesCount + " vs " + noCount + ")");
+        }
+        else if (noCount > yesCount)
+        {
+            winnerText.text = "Winner: NO";
+            Debug.Log("Winner is NO (" + noCount + " vs " + yesCount + ")");
+        }
+        else
+        {
+            winnerText.text = "Winner: TIE";
+            Debug.Log("It is a TIE (" + yesCount + " vs " + noCount + ")");
         }
     }
 }
