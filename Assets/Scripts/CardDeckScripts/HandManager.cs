@@ -172,6 +172,9 @@ public class HandManager : MonoBehaviour
         StartCoroutine(PlayCardRoutine(zoomedCard));
     }
 
+    [SerializeField] private GameObject deckCanvas;   // Assign in inspector
+    [SerializeField] private GameObject discussionUI; // Assign in inspector
+
     private IEnumerator PlayCardRoutine(RectTransform card)
     {
         Vector2 startPos = card.anchoredPosition;
@@ -186,9 +189,14 @@ public class HandManager : MonoBehaviour
             yield return null;
         }
 
+        // Card has finished animating off-screen
         card.gameObject.SetActive(false);
         cardsInHand.Remove(card);
         originalPositions.Remove(card);
+
+        // Switch UI
+        if (deckCanvas != null) deckCanvas.SetActive(false);
+        if (discussionUI != null) discussionUI.SetActive(true);
 
         ResetHandState();
     }
