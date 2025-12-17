@@ -13,6 +13,16 @@ public class HandManager : MonoBehaviour
     public float zoomDuration = 0.3f;
     public float zoomScale = 2f;
 
+    [Header("Play Card Settings")]
+    public float playFlyDistance = 600f;
+    public float playFlyDuration = 0.4f;
+
+    [Header("Selected Card Button")]
+    public RectTransform cardActionButton;
+
+    // ===== PUBLIC GAME STATE =====
+    public RectTransform LastPlayedCard { get; private set; }
+
     private RectTransform handArea;
     private Vector2 handStartPos;
     private bool hasMoved = false;
@@ -34,6 +44,9 @@ public class HandManager : MonoBehaviour
         handStartPos = handArea.anchoredPosition;
 
         handLayout = handArea.GetComponent<LayoutGroup>();
+
+        if (cardActionButton != null)
+            cardActionButton.gameObject.SetActive(false);
     }
 
     // Move the hand panel up
@@ -48,6 +61,7 @@ public class HandManager : MonoBehaviour
     {
         Vector2 targetPos = handStartPos + Vector2.up * moveUpAmount;
         float t = 0f;
+
         while (t < moveDuration)
         {
             t += Time.deltaTime;
@@ -55,6 +69,7 @@ public class HandManager : MonoBehaviour
             handArea.anchoredPosition = Vector2.Lerp(handStartPos, targetPos, p);
             yield return null;
         }
+
         handArea.anchoredPosition = targetPos;
     }
 
@@ -65,7 +80,8 @@ public class HandManager : MonoBehaviour
         originalPositions[card] = card.anchoredPosition;
 
         Button btn = card.gameObject.GetComponent<Button>();
-        if (btn == null) btn = card.gameObject.AddComponent<Button>();
+        if (btn == null)
+            btn = card.gameObject.AddComponent<Button>();
 
         btn.onClick.AddListener(() => OnCardClicked(card));
     }
@@ -74,34 +90,30 @@ public class HandManager : MonoBehaviour
     {
         if (!isCardZoomed)
         {
-            // Zoom in
             isCardZoomed = true;
             zoomedCard = card;
 
             zoomedOriginalPos = card.anchoredPosition;
             zoomedOriginalScale = card.localScale;
 
-            // Disable LayoutGroup temporarily so hand cards don't interfere
             if (handLayout != null)
                 handLayout.enabled = false;
 
-            // Move card to top
             card.SetAsLastSibling();
 
-            // Disable other cards
             foreach (RectTransform c in cardsInHand)
             {
                 if (c != card)
                     c.GetComponent<Button>().interactable = false;
             }
 
-            // Zoom target position
-            Vector2 targetPos = new Vector2(850f, -200f); // adjust offset as needed
+            Vector2 targetPos = new Vector2(850f, -200f);
             StartCoroutine(ZoomCardCoroutine(card, targetPos, zoomedOriginalScale * zoomScale));
+
+            ShowCardButton();
         }
         else if (zoomedCard == card)
         {
-            // Zoom out
             StartCoroutine(ZoomOutRoutine(card));
         }
     }
@@ -143,25 +155,66 @@ public class HandManager : MonoBehaviour
         card.anchoredPosition = zoomedOriginalPos;
         card.localScale = zoomedOriginalScale;
 
-        // Reset other cards to their original positions
-        foreach (var c in cardsInHand)
+        ResetHandState();
+    }
+
+    // =============================
+    // PLAY SELECTED CARD
+    // =============================
+    public void PlaySelectedCard()
+    {
+        if (!isCardZoomed || zoomedCard == null) return;
+
+        // Store the played card publicly
+        LastPlayedCard = zoomedCard;
+
+        HideCardButton();
+        StartCoroutine(PlayCardRoutine(zoomedCard));
+    }
+
+    private IEnumerator PlayCardRoutine(RectTransform card)
+    {
+        Vector2 startPos = card.anchoredPosition;
+        Vector2 targetPos = startPos + Vector2.up * playFlyDistance;
+        float t = 0f;
+
+        while (t < playFlyDuration)
         {
-            if (c != card)
-                c.anchoredPosition = originalPositions[c];
+            t += Time.deltaTime;
+            float p = t / playFlyDuration;
+            card.anchoredPosition = Vector2.Lerp(startPos, targetPos, p);
+            yield return null;
         }
 
-        // Re-enable other cards
+        card.gameObject.SetActive(false);
+        cardsInHand.Remove(card);
+        originalPositions.Remove(card);
+
+        ResetHandState();
+    }
+
+    private void ResetHandState()
+    {
         foreach (RectTransform c in cardsInHand)
-        {
-            if (c != card)
-                c.GetComponent<Button>().interactable = true;
-        }
+            c.GetComponent<Button>().interactable = true;
 
-        // Re-enable LayoutGroup
         if (handLayout != null)
             handLayout.enabled = true;
 
         isCardZoomed = false;
         zoomedCard = null;
+    }
+
+    private void ShowCardButton()
+    {
+        if (cardActionButton == null) return;
+        cardActionButton.gameObject.SetActive(true);
+        cardActionButton.SetAsLastSibling();
+    }
+
+    private void HideCardButton()
+    {
+        if (cardActionButton == null) return;
+        cardActionButton.gameObject.SetActive(false);
     }
 }
