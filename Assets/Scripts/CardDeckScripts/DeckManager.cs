@@ -22,6 +22,7 @@ public class DeckManager : MonoBehaviour
 
     [Header("References")]
     public RectTransform handArea;
+    public HandManager handManager;   // ← ADDED
 
     [Header("Draw Settings")]
     public float drawDelay = 0.15f;
@@ -118,15 +119,19 @@ public class DeckManager : MonoBehaviour
         // Animate all card prefabs into hand sequentially
         foreach (var prefab in prefabsToDraw)
             yield return AnimateCardPrefab(prefab);
+
+        // ← MOVE HAND AFTER ALL CARDS ARE DEALT
+        handManager.MoveHandUp();
     }
 
     private IEnumerator AnimateBack(GameObject backInstance)
     {
         Vector3 startPos = backInstance.transform.position;
 
-        // Calculate the slide direction using the rotation
-        // Use local forward (z-axis) and up (y-axis) to slide diagonally
-        Vector3 slideDir = backInstance.transform.up * -fallDistanceY + backInstance.transform.forward * -fallDistanceZ;
+        Vector3 slideDir =
+            backInstance.transform.up * -fallDistanceY +
+            backInstance.transform.forward * -fallDistanceZ;
+
         Vector3 endPos = startPos + slideDir;
 
         float t = 0f;
@@ -154,6 +159,7 @@ public class DeckManager : MonoBehaviour
         }
 
         rt.sizeDelta = new Vector2(280, 449);
+
         CanvasGroup cg = card.AddComponent<CanvasGroup>();
         cg.alpha = 0f;
 
@@ -174,5 +180,10 @@ public class DeckManager : MonoBehaviour
         }
 
         rt.anchoredPosition = finalPos;
+
+        // Add this after creating the card prefab in DeckManager
+        RectTransform cardRect = card.GetComponent<RectTransform>();
+        handManager.RegisterCard(cardRect);
+
     }
 }
