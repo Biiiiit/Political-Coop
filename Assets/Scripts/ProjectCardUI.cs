@@ -6,25 +6,29 @@ public class ProjectCardUI : MonoBehaviour
     public Transform negativePanel;
     public GameObject riskIconPrefab;
 
-    private ProjectCard cardData;
+    public ProjectCardPreviewData PreviewData { get; private set; }
 
-    public void SetCard(ProjectCard card)
+    void Awake()
     {
-        cardData = card;
-        PopulateRisks();
+        PreviewData = new ProjectCardPreviewData();
+        Refresh();
     }
 
-    private void PopulateRisks()
+    public void Refresh()
     {
-        // Clear existing icons
         foreach (Transform child in negativePanel)
             Destroy(child.gameObject);
 
-        // Spawn new ones
-        foreach (Risk risk in cardData.addedRisks)
+        foreach (Risk risk in PreviewData.addedRisks)
         {
             GameObject iconGO = Instantiate(riskIconPrefab, negativePanel);
             iconGO.GetComponent<RiskIconUI>().SetRisk(risk);
         }
+    }
+
+    public void ResetPreview()
+    {
+        PreviewData = new ProjectCardPreviewData();
+        Refresh();
     }
 }

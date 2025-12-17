@@ -14,7 +14,6 @@ public class CircleSpawnerTMP : MonoBehaviour
     private void Start()
     {
         positiveDropdown.onValueChanged.AddListener(_ => UpdateCircles());
-        negativeDropdown.onValueChanged.AddListener(_ => UpdateCircles());
 
         UpdateCircles();
     }
@@ -28,15 +27,8 @@ public class CircleSpawnerTMP : MonoBehaviour
         // Read positive number
         int pos = int.Parse(positiveDropdown.options[positiveDropdown.value].text);
 
-        // Read negative number
-        int neg = int.Parse(negativeDropdown.options[negativeDropdown.value].text);
-
         // Spawn positive circles (green)
         for (int i = 0; i < pos; i++)
             Instantiate(positiveCirclePrefab, transform);
-
-        // Spawn negative circles (red)
-        for (int i = 0; i < neg; i++)
-            Instantiate(negativeCirclePrefab, transform);
     }
 }

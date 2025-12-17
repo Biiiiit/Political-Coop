@@ -5,17 +5,24 @@ public class RiskLibrary : MonoBehaviour
 {
     public static RiskLibrary Instance { get; private set; }
 
-    public List<Risk> AllRisks = new();
+    [Header("All Risk Assets")]
+    public List<Risk> allRisks = new();
 
     void Awake()
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
+
+        if (allRisks.Count == 0)
+        {
+            Risk[] risks = Resources.LoadAll<Risk>("Risks");
+            allRisks.AddRange(risks);
+        }
     }
 
     public void RegisterRisk(Risk risk)
     {
-        if (!AllRisks.Contains(risk))
-            AllRisks.Add(risk);
+        if (!allRisks.Contains(risk))
+            allRisks.Add(risk);
     }
 }

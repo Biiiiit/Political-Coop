@@ -1,24 +1,29 @@
 using UnityEngine;
 
-
 public class CardCreationController : MonoBehaviour
 {
-    public ProjectCard currentCard;
     public ProjectCardUI previewCardUI;
     public RiskSelectionPanel riskSelectionPanel;
+
+    private ProjectCardPreviewData Preview => previewCardUI.PreviewData;
+
+    void Start()
+    {
+        riskSelectionPanel.Close();
+    }
 
     public void OnAddRiskButtonPressed()
     {
         riskSelectionPanel.Open(this);
     }
 
-    public void AddRiskToCard(Risk risk)
+    public void AddRiskToPreview(Risk risk)
     {
-        if (!currentCard.addedRisks.Contains(risk))
+        if (!Preview.addedRisks.Contains(risk))
         {
-            currentCard.addedRisks.Add(risk);
-            previewCardUI.SetCard(currentCard);
+            Preview.addedRisks.Add(risk);
+            previewCardUI.Refresh();
+            riskSelectionPanel.Close();
         }
     }
 }
-

@@ -1,24 +1,23 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
-public class CardCreationAddRiskButton : MonoBehaviour
+public class RiskSelectionButton : MonoBehaviour
 {
-    public Image iconImage;
+    public Image icon;
+    public TextMeshProUGUI label;
     public Button button;
 
     private Risk risk;
     private RiskSelectionPanel panel;
 
-    public void Setup(Risk risk, RiskSelectionPanel panel)
+    public void Initialize(Risk risk, RiskSelectionPanel panel)
     {
-        if(button == null)
-        {
-            Debug.Log("no button assigned");
-        }
         this.risk = risk;
         this.panel = panel;
 
-        iconImage.sprite = risk.icon;
+        icon.sprite = risk.icon;
+        label.text = risk.name;
 
         button.onClick.RemoveAllListeners();
         button.onClick.AddListener(OnClicked);
@@ -26,7 +25,6 @@ public class CardCreationAddRiskButton : MonoBehaviour
 
     void OnClicked()
     {
-        Debug.Log("risk clicked");
         panel.SelectRisk(risk);
     }
 }

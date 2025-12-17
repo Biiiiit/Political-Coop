@@ -7,13 +7,15 @@ public class RiskSelectionPanel : MonoBehaviour
     public CardCreationAddRiskButton riskButtonPrefab;
 
     private CardCreationController caller;
+    private Risk selectedRisk;
 
     public void Open(CardCreationController controller)
     {
         caller = controller;
-        gameObject.SetActive(true);
+        selectedRisk = null;
 
-        Populate(RiskLibrary.Instance.AllRisks);
+        gameObject.SetActive(true);
+        Populate(RiskLibrary.Instance.allRisks);
     }
 
     public void Close()
@@ -23,19 +25,31 @@ public class RiskSelectionPanel : MonoBehaviour
 
     void Populate(List<Risk> risks)
     {
+        Debug.Log("Risks count: " + risks.Count);
         foreach (Transform child in contentParent)
             Destroy(child.gameObject);
 
         foreach (Risk risk in risks)
         {
-            CardCreationAddRiskButton button = Instantiate(riskButtonPrefab, contentParent);
+            CardCreationAddRiskButton button =
+                Instantiate(riskButtonPrefab, contentParent);
+
             button.Setup(risk, this);
         }
     }
 
     public void SelectRisk(Risk risk)
     {
-        caller.AddRiskToCard(risk);
+        selectedRisk = risk;
+        Debug.Log($"Selected risk: {risk.name}");
+    }
+
+    public void ConfirmSelection()
+    {
+        if (selectedRisk == null)
+            return;
+
+        caller.AddRiskToPreview(selectedRisk);
         Close();
     }
 }
