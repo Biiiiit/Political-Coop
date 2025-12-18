@@ -15714,6 +15714,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: ProjectCard
       objectReference: {fileID: 0}
+    - target: {fileID: 5061276787667805294, guid: 77a5e1c6f41ac5b4d9fb30896a8d96ea, type: 3}
+      propertyPath: m_CellSize.x
+      value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 5061276787667805294, guid: 77a5e1c6f41ac5b4d9fb30896a8d96ea, type: 3}
+      propertyPath: m_CellSize.y
+      value: 60
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
