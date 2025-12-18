@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4045320558227751236
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6208779660215209071}
+  - component: {fileID: 3541417272129378687}
+  m_Layer: 0
+  m_Name: DeckManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6208779660215209071
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4045320558227751236}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3541417272129378687
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4045320558227751236}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 109d964399e9a8a44a49d056f4c0fa01, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  deck1:
+  - {fileID: 2968171471195711120, guid: 6dd098979ddae3a4584a41347b5c5343, type: 3}
+  - {fileID: 2968171471195711120, guid: 6dd098979ddae3a4584a41347b5c5343, type: 3}
+  - {fileID: 2968171471195711120, guid: 6dd098979ddae3a4584a41347b5c5343, type: 3}
+  - {fileID: 2968171471195711120, guid: 6dd098979ddae3a4584a41347b5c5343, type: 3}
+  deckBacks1:
+  - {fileID: 4741918190816643715, guid: df63f2bbe81c95d4b8b7937189e74ed9, type: 3}
+  - {fileID: 4741918190816643715, guid: df63f2bbe81c95d4b8b7937189e74ed9, type: 3}
+  - {fileID: 4741918190816643715, guid: df63f2bbe81c95d4b8b7937189e74ed9, type: 3}
+  - {fileID: 4741918190816643715, guid: df63f2bbe81c95d4b8b7937189e74ed9, type: 3}
+  deck2:
+  - {fileID: 2968171471195711120, guid: 6dd098979ddae3a4584a41347b5c5343, type: 3}
+  - {fileID: 2968171471195711120, guid: 6dd098979ddae3a4584a41347b5c5343, type: 3}
+  - {fileID: 2968171471195711120, guid: 6dd098979ddae3a4584a41347b5c5343, type: 3}
+  - {fileID: 2968171471195711120, guid: 6dd098979ddae3a4584a41347b5c5343, type: 3}
+  deckBacks2:
+  - {fileID: 4741918190816643715, guid: df63f2bbe81c95d4b8b7937189e74ed9, type: 3}
+  - {fileID: 4741918190816643715, guid: df63f2bbe81c95d4b8b7937189e74ed9, type: 3}
+  - {fileID: 4741918190816643715, guid: df63f2bbe81c95d4b8b7937189e74ed9, type: 3}
+  - {fileID: 4741918190816643715, guid: df63f2bbe81c95d4b8b7937189e74ed9, type: 3}
+  deck3:
+  - {fileID: 2968171471195711120, guid: 6dd098979ddae3a4584a41347b5c5343, type: 3}
+  - {fileID: 2968171471195711120, guid: 6dd098979ddae3a4584a41347b5c5343, type: 3}
+  - {fileID: 2968171471195711120, guid: 6dd098979ddae3a4584a41347b5c5343, type: 3}
+  - {fileID: 2968171471195711120, guid: 6dd098979ddae3a4584a41347b5c5343, type: 3}
+  deckBacks3:
+  - {fileID: 4741918190816643715, guid: df63f2bbe81c95d4b8b7937189e74ed9, type: 3}
+  - {fileID: 4741918190816643715, guid: df63f2bbe81c95d4b8b7937189e74ed9, type: 3}
+  - {fileID: 4741918190816643715, guid: df63f2bbe81c95d4b8b7937189e74ed9, type: 3}
+  - {fileID: 4741918190816643715, guid: df63f2bbe81c95d4b8b7937189e74ed9, type: 3}
+  handArea: {fileID: 0}
+  handManager: {fileID: 0}
+  drawDelay: 0.2
+  fallDuration: 0.4
+  handDuration: 0.35
+  startOffset: 500
+  fallDistanceY: 20
+  fallDistanceZ: 5
+  stackOffsetY: 0.1
