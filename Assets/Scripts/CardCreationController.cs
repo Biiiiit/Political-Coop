@@ -22,7 +22,7 @@ public class CardCreationController : MonoBehaviour
         if (!Preview.addedRisks.Contains(risk))
         {
             Preview.addedRisks.Add(risk);
-            previewCardUI.Refresh();
+            previewCardUI.DisplayRiskIcons();
             riskSelectionPanel.Close();
         }
     }
