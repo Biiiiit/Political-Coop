@@ -23,6 +23,9 @@ public class DeckManager : MonoBehaviour
     [Header("References")]
     public RectTransform handArea;
     public HandManager handManager;   // ← ADDED
+    private Dictionary<RectTransform, GameObject> cardPrefabMap
+    = new Dictionary<RectTransform, GameObject>();
+
 
     [Header("Draw Settings")]
     public float drawDelay = 0.15f;
@@ -181,9 +184,17 @@ public class DeckManager : MonoBehaviour
 
         rt.anchoredPosition = finalPos;
 
-        // Add this after creating the card prefab in DeckManager
+        // Register card + remember its prefab
         RectTransform cardRect = card.GetComponent<RectTransform>();
         handManager.RegisterCard(cardRect);
 
+        // Store mapping
+        cardPrefabMap[cardRect] = prefab;
     }
+
+    public GameObject GetPrefabForCard(RectTransform card)
+    {
+        return cardPrefabMap.TryGetValue(card, out var prefab) ? prefab : null;
+    }
+
 }

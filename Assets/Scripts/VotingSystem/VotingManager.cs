@@ -8,8 +8,14 @@ public class VotingManager : MonoBehaviour
     [Header("UI References")]
     public TMP_Text resultsText;
     public TMP_Text winnerText;
-    public Transform MainCardAnchor; // Where the card should end up
+    public RectTransform MainCardAnchor;     // card during voting
+    public RectTransform ResultsCardAnchor;  // card for results UI
     public float cardFlyDuration = 0.5f;
+
+    [Header("References")]
+    public PlayedCardStore cardStorage; // assign in inspector
+    public TimerBarUI votingTimer;      // assign in inspector
+
 
     private List<string> votes = new List<string>();
     private int yesCount = 0;
@@ -17,18 +23,18 @@ public class VotingManager : MonoBehaviour
 
     public string playerName = "Player1";
 
-    private RectTransform cardToAnimate = null;
-
     // === Voting ===
     public void VoteYes()
     {
         votes.Add(playerName + " voted Yes");
+        yesCount++;       // increment yes count
         UpdateResults();
     }
 
     public void VoteNo()
     {
         votes.Add(playerName + " voted No");
+        noCount++;        // increment no count
         UpdateResults();
     }
 
@@ -49,50 +55,88 @@ public class VotingManager : MonoBehaviour
             winnerText.text = "Winner: NO";
         else
             winnerText.text = "Winner: TIE";
+
+        // After showing winner, spawn the card in results
+        SpawnCardInResults();
     }
 
-    // === Receive card reference ===
-    public void ReceiveCard(RectTransform card)
-    {
-        cardToAnimate = card;
-    }
-
-    // === Animate card when UI is enabled ===
     private void OnEnable()
     {
-        if (cardToAnimate != null)
-        {
-            StartCoroutine(AnimateCardToAnchor(cardToAnimate));
-        }
+        StartCoroutine(SpawnCardNextFrame());
     }
 
-    private IEnumerator AnimateCardToAnchor(RectTransform card)
+    private IEnumerator SpawnCardNextFrame()
     {
-        // Keep card as a child of canvas
-        Canvas canvas = MainCardAnchor.GetComponentInParent<Canvas>();
-        card.SetParent(canvas.transform, worldPositionStays: true);
+        // Wait a frame to ensure the UI is active and layout resolved
+        yield return null;
+        yield return new WaitForEndOfFrame();
 
-        // Start at bottom of screen
-        Vector3 startPos = new Vector3(0, -canvas.pixelRect.height / 2f - card.rect.height, 0);
-        card.position = startPos;
+        if (cardStorage == null || cardStorage.PlayedCardPrefab == null)
+        {
+            Debug.LogWarning("No card prefab in storage or storage not assigned!");
+            yield break;
+        }
 
-        // End position: MainCardAnchor
-        Vector3 endPos = MainCardAnchor.position;
+        GameObject prefab = cardStorage.PlayedCardPrefab;
+        Debug.Log("Spawning card prefab: " + prefab.name);
+
+        // Instantiate prefab without parent first
+        GameObject cardGO = Instantiate(prefab);
+
+        // Make sure it's a UI element
+        RectTransform card = cardGO.GetComponent<RectTransform>();
+        if (card == null)
+        {
+            Debug.LogError("Card prefab must have a RectTransform!");
+            yield break;
+        }
+
+        // Parent under MainCardAnchor
+        card.SetParent(MainCardAnchor, false);
+        card.localRotation = Quaternion.identity;
+
+        // Wait one frame to allow layout to settle
+        yield return null;
+
+        // Animate from below and scale up
+        Vector2 finalPos = card.anchoredPosition;
+        card.anchoredPosition = new Vector2(finalPos.x, -900f);
+        card.localScale = Vector3.one * 1.5f;
 
         float t = 0f;
-        Vector3 startScale = card.localScale;
-        Vector3 targetScale = card.localScale;
-
         while (t < cardFlyDuration)
         {
             t += Time.deltaTime;
-            float p = t / cardFlyDuration;
-            card.position = Vector3.Lerp(startPos, endPos, p);
-            card.localScale = Vector3.Lerp(startScale, targetScale, p);
+            float p = Mathf.SmoothStep(0f, 1f, t / cardFlyDuration);
+            card.anchoredPosition = Vector2.Lerp(new Vector2(finalPos.x, -900f), finalPos, p);
             yield return null;
         }
 
-        card.position = endPos;
-        card.SetParent(MainCardAnchor, worldPositionStays: false);
+        // At the very end of SpawnCardNextFrame(), after setting card.anchoredPosition
+        card.anchoredPosition = finalPos;
+
+        // Start the timer now that the card is in place
+        if (votingTimer != null)
+            votingTimer.StartTimer();
+
+        Debug.Log("Card prefab parented, animated under MainCardAnchor, and scaled up.");
+    }
+
+    private void SpawnCardInResults()
+    {
+        if (cardStorage == null || cardStorage.PlayedCardPrefab == null || ResultsCardAnchor == null)
+            return;
+
+        GameObject prefab = cardStorage.PlayedCardPrefab;
+        GameObject cardGO = Instantiate(prefab, ResultsCardAnchor);
+        RectTransform card = cardGO.GetComponent<RectTransform>();
+        if (card != null)
+        {
+            card.localScale = Vector3.one * 2f;   // scale for results
+            card.localRotation = Quaternion.identity;
+            card.anchoredPosition = Vector2.zero; // center in anchor
+        }
+
+        Debug.Log("Card prefab spawned under ResultsCardAnchor.");
     }
 }

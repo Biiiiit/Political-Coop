@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,7 +22,7 @@ public class HandManager : MonoBehaviour
     public RectTransform cardActionButton;
 
     // ===== PUBLIC GAME STATE =====
-    public RectTransform LastPlayedCard { get; private set; }
+    [SerializeField] private DeckManager deckManager;
 
     private RectTransform handArea;
     private Vector2 handStartPos;
@@ -165,8 +166,11 @@ public class HandManager : MonoBehaviour
     {
         if (!isCardZoomed || zoomedCard == null) return;
 
-        // Store the played card publicly
-        LastPlayedCard = zoomedCard;
+        GameObject prefab = deckManager.GetPrefabForCard(zoomedCard);
+        if (prefab != null)
+        {
+            PlayedCardStore.Instance.StoreCard(prefab);
+        }
 
         HideCardButton();
         StartCoroutine(PlayCardRoutine(zoomedCard));
@@ -174,6 +178,7 @@ public class HandManager : MonoBehaviour
 
     [SerializeField] private GameObject deckCanvas;   // Assign in inspector
     [SerializeField] private GameObject discussionUI; // Assign in inspector
+    [SerializeField] public VotingManager VotingManagerInstance;
 
     private IEnumerator PlayCardRoutine(RectTransform card)
     {
@@ -197,6 +202,7 @@ public class HandManager : MonoBehaviour
         // Switch UI
         if (deckCanvas != null) deckCanvas.SetActive(false);
         if (discussionUI != null) discussionUI.SetActive(true);
+        if (VotingManagerInstance != null) VotingManagerInstance.gameObject.SetActive(true);
 
         ResetHandState();
     }
