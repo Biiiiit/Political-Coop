@@ -2,15 +2,14 @@ using UnityEngine;
 
 public class ProjectCardUI : MonoBehaviour
 {
-    [Header("References")]
-    public Transform negativePanel;           
-    public GameObject riskIconPrefabForCard;
+    public Transform negativePanel;
+    public GameObject riskIconPrefab;
 
-    public ProjectCardPreviewData PreviewData { get; private set; }
+    private Assignedrisks assignedrisks;
 
     void Awake()
     {
-        PreviewData = new ProjectCardPreviewData();
+        assignedrisks = GetComponent<Assignedrisks>();
         DisplayRiskIcons();
     }
 
@@ -19,25 +18,10 @@ public class ProjectCardUI : MonoBehaviour
         foreach (Transform child in negativePanel)
             Destroy(child.gameObject);
 
-        foreach (Risk risk in PreviewData.addedRisks)
+        foreach (Risk risk in assignedrisks.GetRisks())
         {
-            GameObject iconGO = Instantiate(riskIconPrefabForCard, negativePanel);
-
-            RectTransform rt = iconGO.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0.5f, 0.5f);
-            rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.localScale = Vector3.one;
-
-            RiskIconUI iconUI = iconGO.GetComponent<RiskIconUI>();
-            if (iconUI != null)
-                iconUI.SetRisk(risk);
+            GameObject icon = Instantiate(riskIconPrefab, negativePanel);
+            icon.GetComponent<RiskIconUI>().SetRisk(risk);
         }
-    }
-
-    public void ResetPreview()
-    {
-        PreviewData = new ProjectCardPreviewData();
-        DisplayRiskIcons();
     }
 }
