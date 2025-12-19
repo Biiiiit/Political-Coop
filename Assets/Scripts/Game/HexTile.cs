@@ -3,15 +3,16 @@ using UnityEngine;
 public class HexTile : MonoBehaviour
 {
     public int id;
-    private SpriteRenderer sr;
+
+    private Renderer rend;
 
     void Awake()
     {
-        sr = GetComponent<SpriteRenderer>();
+        rend = GetComponent<Renderer>();
     }
 
     public void SetColor(Color color)
     {
-        sr.color = color;
+        rend.material.color = color;
     }
 }
