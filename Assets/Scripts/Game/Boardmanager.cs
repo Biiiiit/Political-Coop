@@ -17,4 +17,14 @@ public class BoardManager : MonoBehaviour
         int randomIndex = Random.Range(0, tiles.Count);
         tiles[randomIndex].SetColor(Color.red);
     }
+
+    void Start()
+    {
+        foreach (HexTile tile in tiles)
+        {
+            tile.height = Random.Range(0f, 0.5f);
+            tile.ApplyHeight();
+        }
+    }
+
 }
