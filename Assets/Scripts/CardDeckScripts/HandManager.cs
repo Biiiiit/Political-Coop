@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,8 +20,9 @@ public class HandManager : MonoBehaviour
     [Header("Selected Card Button")]
     public RectTransform cardActionButton;
 
-    // ===== PUBLIC GAME STATE =====
+    [Header("References")]
     [SerializeField] private DeckManager deckManager;
+    [SerializeField] private RectTransform deckCanvas;   // Assign DeckCanvas RectTransform
 
     private RectTransform handArea;
     private Vector2 handStartPos;
@@ -36,8 +36,12 @@ public class HandManager : MonoBehaviour
     // Zoom tracking
     private bool isCardZoomed = false;
     private RectTransform zoomedCard = null;
-    private Vector2 zoomedOriginalPos;
+    private Vector3 zoomedOriginalWorldPos;
     private Vector3 zoomedOriginalScale;
+    private Transform zoomedOriginalParent;
+
+    // Dark background
+    private Image dimBackground;
 
     private void Awake()
     {
@@ -50,7 +54,6 @@ public class HandManager : MonoBehaviour
             cardActionButton.gameObject.SetActive(false);
     }
 
-    // Move the hand panel up
     public void MoveHandUp()
     {
         if (hasMoved) return;
@@ -74,13 +77,12 @@ public class HandManager : MonoBehaviour
         handArea.anchoredPosition = targetPos;
     }
 
-    // Register a card
     public void RegisterCard(RectTransform card)
     {
         cardsInHand.Add(card);
         originalPositions[card] = card.anchoredPosition;
 
-        Button btn = card.gameObject.GetComponent<Button>();
+        Button btn = card.GetComponent<Button>();
         if (btn == null)
             btn = card.gameObject.AddComponent<Button>();
 
@@ -94,13 +96,17 @@ public class HandManager : MonoBehaviour
             isCardZoomed = true;
             zoomedCard = card;
 
-            zoomedOriginalPos = card.anchoredPosition;
+            zoomedOriginalParent = card.parent;
             zoomedOriginalScale = card.localScale;
+            zoomedOriginalWorldPos = card.position;
+
+            // Reparent to deckCanvas and keep world position
+            card.SetParent(deckCanvas, true);
+            card.position = zoomedOriginalWorldPos;
+            card.SetAsLastSibling();
 
             if (handLayout != null)
                 handLayout.enabled = false;
-
-            card.SetAsLastSibling();
 
             foreach (RectTransform c in cardsInHand)
             {
@@ -108,10 +114,12 @@ public class HandManager : MonoBehaviour
                     c.GetComponent<Button>().interactable = false;
             }
 
-            Vector2 targetPos = new Vector2(850f, -200f);
-            StartCoroutine(ZoomCardCoroutine(card, targetPos, zoomedOriginalScale * zoomScale));
+            // Create dim background behind card
+            CreateDimBackground();
 
-            ShowCardButton();
+            // Animate card to center
+            Vector3 targetWorldPos = deckCanvas.TransformPoint(((RectTransform)deckCanvas).rect.center);
+            StartCoroutine(ZoomCardCoroutine(card, targetWorldPos, zoomedOriginalScale * zoomScale, true)); // true = show button after zoom
         }
         else if (zoomedCard == card)
         {
@@ -119,9 +127,50 @@ public class HandManager : MonoBehaviour
         }
     }
 
-    private IEnumerator ZoomCardCoroutine(RectTransform card, Vector2 targetPos, Vector3 targetScale)
+    private void CreateDimBackground()
     {
-        Vector2 startPos = card.anchoredPosition;
+        if (dimBackground != null) return; // Already exists
+
+        GameObject bgGO = new GameObject("DimBackground", typeof(RectTransform));
+        bgGO.transform.SetParent(deckCanvas, false);
+
+        RectTransform rt = bgGO.GetComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+
+        dimBackground = bgGO.AddComponent<Image>();
+        dimBackground.color = new Color(0, 0, 0, 0); // Start transparent
+
+        // Place background **just below the zoomed card** in hierarchy
+        if (zoomedCard != null)
+            bgGO.transform.SetSiblingIndex(zoomedCard.GetSiblingIndex());
+
+        StartCoroutine(FadeBackground(0f, 0.5f, zoomDuration));
+    }
+
+    private IEnumerator FadeBackground(float fromAlpha, float toAlpha, float duration)
+    {
+        float t = 0f;
+        Color c = dimBackground.color;
+
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float p = t / duration;
+            c.a = Mathf.Lerp(fromAlpha, toAlpha, p);
+            dimBackground.color = c;
+            yield return null;
+        }
+
+        c.a = toAlpha;
+        dimBackground.color = c;
+    }
+
+    private IEnumerator ZoomCardCoroutine(RectTransform card, Vector3 targetWorldPos, Vector3 targetScale, bool showButtonAfter = false)
+    {
+        Vector3 startPos = card.position;
         Vector3 startScale = card.localScale;
         float t = 0f;
 
@@ -129,39 +178,56 @@ public class HandManager : MonoBehaviour
         {
             t += Time.deltaTime;
             float p = t / zoomDuration;
-            card.anchoredPosition = Vector2.Lerp(startPos, targetPos, p);
+            card.position = Vector3.Lerp(startPos, targetWorldPos, p);
             card.localScale = Vector3.Lerp(startScale, targetScale, p);
             yield return null;
         }
 
-        card.anchoredPosition = targetPos;
+        card.position = targetWorldPos;
         card.localScale = targetScale;
+
+        if (showButtonAfter)
+            ShowCardButton();
     }
 
     private IEnumerator ZoomOutRoutine(RectTransform card)
     {
-        Vector2 startPos = card.anchoredPosition;
+        // Hide the card button immediately
+        HideCardButton();
+
+        Vector3 startPos = card.position;
         Vector3 startScale = card.localScale;
         float t = 0f;
+
+        // Fade background back
+        if (dimBackground != null)
+            StartCoroutine(FadeBackground(0.5f, 0f, zoomDuration));
 
         while (t < zoomDuration)
         {
             t += Time.deltaTime;
             float p = t / zoomDuration;
-            card.anchoredPosition = Vector2.Lerp(startPos, zoomedOriginalPos, p);
+            card.position = Vector3.Lerp(startPos, zoomedOriginalWorldPos, p);
             card.localScale = Vector3.Lerp(startScale, zoomedOriginalScale, p);
             yield return null;
         }
 
-        card.anchoredPosition = zoomedOriginalPos;
+        card.position = zoomedOriginalWorldPos;
         card.localScale = zoomedOriginalScale;
+
+        // Reparent back to hand
+        card.SetParent(zoomedOriginalParent, true);
+
+        // Remove background
+        if (dimBackground != null)
+        {
+            Destroy(dimBackground.gameObject);
+            dimBackground = null;
+        }
 
         ResetHandState();
     }
 
-    // =============================
-    // PLAY SELECTED CARD
-    // =============================
     public void PlaySelectedCard()
     {
         if (!isCardZoomed || zoomedCard == null) return;
@@ -176,8 +242,8 @@ public class HandManager : MonoBehaviour
         StartCoroutine(PlayCardRoutine(zoomedCard));
     }
 
-    [SerializeField] private GameObject deckCanvas;   // Assign in inspector
-    [SerializeField] private GameObject discussionUI; // Assign in inspector
+    [SerializeField] private GameObject deckCanvasGO;
+    [SerializeField] private GameObject discussionUI;
     [SerializeField] public VotingManager VotingManagerInstance;
 
     private IEnumerator PlayCardRoutine(RectTransform card)
@@ -194,13 +260,11 @@ public class HandManager : MonoBehaviour
             yield return null;
         }
 
-        // Card has finished animating off-screen
         card.gameObject.SetActive(false);
         cardsInHand.Remove(card);
         originalPositions.Remove(card);
 
-        // Switch UI
-        if (deckCanvas != null) deckCanvas.SetActive(false);
+        if (deckCanvasGO != null) deckCanvasGO.SetActive(false);
         if (discussionUI != null) discussionUI.SetActive(true);
         if (VotingManagerInstance != null) VotingManagerInstance.gameObject.SetActive(true);
 
