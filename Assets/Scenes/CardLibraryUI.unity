@@ -447,7 +447,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1778919585118536755, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
       propertyPath: proceedSceneName
-      value: Screens
+      value: GameScreen
       objectReference: {fileID: 0}
     - target: {fileID: 1778919585118536755, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
       propertyPath: createCardSceneName

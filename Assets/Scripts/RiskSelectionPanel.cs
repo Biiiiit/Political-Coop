@@ -46,9 +46,21 @@ public class RiskSelectionPanel : MonoBehaviour
 
     public void ConfirmSelection()
     {
+        Debug.Log("[RiskSelectionPanel] ConfirmSelection called");
+        
         if (selectedRisk == null)
+        {
+            Debug.LogWarning("[RiskSelectionPanel] selectedRisk is NULL!");
             return;
+        }
 
+        if (caller == null)
+        {
+            Debug.LogError("[RiskSelectionPanel] caller (CardCreationController) is NULL!");
+            return;
+        }
+
+        Debug.Log($"[RiskSelectionPanel] Adding risk: {selectedRisk.name} to preview");
         caller.AddRiskToPreview(selectedRisk);
         Close();
     }
