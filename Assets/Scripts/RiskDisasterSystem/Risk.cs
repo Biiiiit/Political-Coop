@@ -6,7 +6,7 @@ public class Risk : ScriptableObject
     [Header("Basic Info")]
     public string riskName;
     [TextArea] public string description;
-    public string category; // industry, Nature, etc.
+    public string category; // Player role: Farming (1), Industry (2), Housing (3), Nature (4)
 
     [Header("Risk Behavior")]
     [Range(1, 5)] public int severity = 1;

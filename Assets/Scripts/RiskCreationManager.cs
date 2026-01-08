@@ -9,45 +9,61 @@ public class RiskCreationManager : MonoBehaviour
     public GameObject createRiskPanel;
     public GameObject backgroundOverlay;
 
-    [Header("Inputs")]
+    [Header("Basic Risk Inputs")]
+    public TMP_InputField nameInput;
+    public TMP_InputField descriptionInput;
+    public TMP_InputField disasterTagsInput; // Comma-separated tags
+
+    [Header("Player Assignment")]
     public Toggle player1Toggle;
     public Toggle player2Toggle;
     public Toggle player3Toggle;
     public Toggle player4Toggle;
-    public TMP_InputField nameInput;
-    public TMP_InputField descriptionInput;
 
     [Header("Risk List")]
     public Transform risksListParent;
-    public GameObject riskItemPrefab; // prefab with CircleContainer
-    public GameObject circlePrefab;   // prefab for a single circle
+    public GameObject riskItemPrefab;
 
     private GameObject currentRisk;
 
     void Start()
     {
         createRiskPanel.SetActive(false);
+        
+        // Setup background overlay button listener
         if (backgroundOverlay != null)
-            backgroundOverlay.GetComponent<Button>().onClick.AddListener(CloseRiskPanel);
+        {
+            Button overlayButton = backgroundOverlay.GetComponent<Button>();
+            if (overlayButton != null)
+            {
+                overlayButton.onClick.AddListener(CloseRiskPanel);
+                Debug.Log("[RiskCreationManager] Background overlay button listener added");
+            }
+            else
+            {
+                Debug.LogError("[RiskCreationManager] backgroundOverlay does not have a Button component!");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[RiskCreationManager] backgroundOverlay not assigned in Inspector");
+        }
 
-        // Add listeners to enforce max 2 selections
-        player1Toggle.onValueChanged.AddListener(delegate { EnforceMaxSelection(); });
-        player2Toggle.onValueChanged.AddListener(delegate { EnforceMaxSelection(); });
-        player3Toggle.onValueChanged.AddListener(delegate { EnforceMaxSelection(); });
-        player4Toggle.onValueChanged.AddListener(delegate { EnforceMaxSelection(); });
+        // Add listeners to enforce max 2 player selections
+        if (player1Toggle != null) player1Toggle.onValueChanged.AddListener(delegate { EnforceMaxSelection(); });
+        if (player2Toggle != null) player2Toggle.onValueChanged.AddListener(delegate { EnforceMaxSelection(); });
+        if (player3Toggle != null) player3Toggle.onValueChanged.AddListener(delegate { EnforceMaxSelection(); });
+        if (player4Toggle != null) player4Toggle.onValueChanged.AddListener(delegate { EnforceMaxSelection(); });
     }
 
     void EnforceMaxSelection()
     {
-        // Gather toggles
         Toggle[] toggles = new Toggle[] { player1Toggle, player2Toggle, player3Toggle, player4Toggle };
 
-        // Count how many are currently on
         int selectedCount = 0;
         foreach (var t in toggles)
             if (t.isOn) selectedCount++;
 
-        // If more than 2, disable unchecked toggles
         if (selectedCount >= 2)
         {
             foreach (var t in toggles)
@@ -56,7 +72,6 @@ public class RiskCreationManager : MonoBehaviour
         }
         else
         {
-            // Re-enable all toggles if less than 2 selected
             foreach (var t in toggles)
                 t.interactable = true;
         }
@@ -69,12 +84,19 @@ public class RiskCreationManager : MonoBehaviour
             backgroundOverlay.SetActive(true);
 
         // Reset all fields
-        nameInput.text = "";
-        descriptionInput.text = "";
-        player1Toggle.isOn = false;
-        player2Toggle.isOn = false;
-        player3Toggle.isOn = false;
-        player4Toggle.isOn = false;
+        ResetInputs();
+    }
+
+    void ResetInputs()
+    {
+        if (nameInput != null) nameInput.text = "";
+        if (descriptionInput != null) descriptionInput.text = "";
+        if (disasterTagsInput != null) disasterTagsInput.text = "";
+        
+        if (player1Toggle != null) player1Toggle.isOn = false;
+        if (player2Toggle != null) player2Toggle.isOn = false;
+        if (player3Toggle != null) player3Toggle.isOn = false;
+        if (player4Toggle != null) player4Toggle.isOn = false;
     }
 
     public void CloseRiskPanel()
@@ -86,6 +108,13 @@ public class RiskCreationManager : MonoBehaviour
 
     public void SaveRisk()
     {
+        // Validate inputs
+        if (string.IsNullOrEmpty(nameInput.text))
+        {
+            Debug.LogWarning("[RiskCreationManager] Risk name cannot be empty!");
+            return;
+        }
+
         // Collect selected players
         List<int> selectedPlayers = new List<int>();
         if (player1Toggle.isOn) selectedPlayers.Add(1);
@@ -93,45 +122,73 @@ public class RiskCreationManager : MonoBehaviour
         if (player3Toggle.isOn) selectedPlayers.Add(3);
         if (player4Toggle.isOn) selectedPlayers.Add(4);
 
-        // Prevent creating a risk if none are selected
         if (selectedPlayers.Count == 0)
         {
-            Debug.LogWarning("Select at least 1 player to create a risk!");
+            Debug.LogWarning("[RiskCreationManager] Select at least 1 player for this risk!");
             return;
         }
 
-        // Only 1 risk per card
+        // Create a new Risk ScriptableObject
+        Risk newRisk = ScriptableObject.CreateInstance<Risk>();
+        newRisk.name = nameInput.text; // Set the object's internal name
+        newRisk.riskName = nameInput.text; // Set the display name field
+        newRisk.description = descriptionInput.text;
+        newRisk.category = string.Join(", ", selectedPlayers); // Store player assignments
+        
+        // Load default icon from Resources
+        newRisk.icon = Resources.Load<Sprite>("RiskIcons/DefaultRiskIcon");
+        if (newRisk.icon == null)
+        {
+            Debug.LogWarning("[RiskCreationManager] DefaultRiskIcon not found in Resources/RiskIcons/. Make sure the sprite is placed there.");
+        }
+        
+        // Parse disaster tags (comma-separated)
+        if (!string.IsNullOrEmpty(disasterTagsInput.text))
+        {
+            newRisk.disasterTags = disasterTagsInput.text.Split(',');
+            // Trim whitespace from each tag
+            for (int i = 0; i < newRisk.disasterTags.Length; i++)
+                newRisk.disasterTags[i] = newRisk.disasterTags[i].Trim();
+        }
+
+        // Set default values for behavior (can be customized later)
+        newRisk.severity = 1;
+        newRisk.baseProbability = 0.02f;
+        newRisk.escalationRate = 0.01f;
+        newRisk.color = Color.white;
+
+        // Register with RiskLibrary so it's available for card creation
+        if (RiskLibrary.Instance != null)
+        {
+            RiskLibrary.Instance.RegisterRisk(newRisk);
+            Debug.Log($"[RiskCreationManager] Risk '{newRisk.name}' registered to RiskLibrary for players: {string.Join(", ", selectedPlayers)}");
+        }
+        else
+        {
+            Debug.LogError("[RiskCreationManager] RiskLibrary.Instance not found!");
+            return;
+        }
+
+        // Create visual representation in list
+        if (riskItemPrefab == null)
+        {
+            Debug.LogError("[RiskCreationManager] riskItemPrefab not assigned!");
+            return;
+        }
+
         if (currentRisk != null)
             Destroy(currentRisk);
 
-        // Instantiate risk prefab
         currentRisk = Instantiate(riskItemPrefab, risksListParent);
 
-        // Set name and description
+        // Set risk name
         TMP_Text[] fields = currentRisk.GetComponentsInChildren<TMP_Text>();
-        if (fields.Length >= 3)
+        if (fields.Length >= 1)
         {
-            fields[1].text = nameInput.text;
-            fields[2].text = descriptionInput.text;
+            fields[0].text = nameInput.text;
         }
 
-        // Circle container
-        Transform circleContainer = currentRisk.transform.Find("CircleContainer");
-        if (circleContainer == null)
-        {
-            Debug.LogError("Risk prefab must have a child named 'CircleContainer'");
-            return;
-        }
-
-        // Spawn a circle for each selected player
-        foreach (int player in selectedPlayers)
-        {
-            GameObject circle = Instantiate(circlePrefab, circleContainer);
-            TMP_Text circleText = circle.GetComponentInChildren<TMP_Text>();
-            if (circleText != null)
-                circleText.text = player.ToString();
-        }
-
+        Debug.Log($"[RiskCreationManager] Risk '{nameInput.text}' created for players: {string.Join(", ", selectedPlayers)}");
         CloseRiskPanel();
     }
 }
