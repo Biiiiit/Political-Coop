@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using System.Collections.Generic;
 
 public class RiskCreationManager : MonoBehaviour
@@ -25,30 +26,24 @@ public class RiskCreationManager : MonoBehaviour
     public GameObject riskItemPrefab;
 
     private GameObject currentRisk;
+    private bool justOpenedPanel = false;
+
+    void Update()
+    {
+        // Monitor panel state after opening
+        if (justOpenedPanel)
+        {
+            if (!createRiskPanel.activeSelf)
+            {
+                Debug.LogWarning("[RiskCreationManager] Panel was deactivated after OpenRiskPanel() was called!");
+                Debug.LogWarning(System.Environment.StackTrace);
+                justOpenedPanel = false;
+            }
+        }
+    }
 
     void Start()
     {
-        createRiskPanel.SetActive(false);
-        
-        // Setup background overlay button listener
-        if (backgroundOverlay != null)
-        {
-            Button overlayButton = backgroundOverlay.GetComponent<Button>();
-            if (overlayButton != null)
-            {
-                overlayButton.onClick.AddListener(CloseRiskPanel);
-                Debug.Log("[RiskCreationManager] Background overlay button listener added");
-            }
-            else
-            {
-                Debug.LogError("[RiskCreationManager] backgroundOverlay does not have a Button component!");
-            }
-        }
-        else
-        {
-            Debug.LogWarning("[RiskCreationManager] backgroundOverlay not assigned in Inspector");
-        }
-
         // Add listeners to enforce max 2 player selections
         if (player1Toggle != null) player1Toggle.onValueChanged.AddListener(delegate { EnforceMaxSelection(); });
         if (player2Toggle != null) player2Toggle.onValueChanged.AddListener(delegate { EnforceMaxSelection(); });
@@ -79,7 +74,18 @@ public class RiskCreationManager : MonoBehaviour
 
     public void OpenRiskPanel()
     {
+        Debug.Log("[RiskCreationManager] OpenRiskPanel called");
+        
+        // Deselect the button that was just clicked to avoid EventSystem holding onto it
+        EventSystem.current.SetSelectedGameObject(null);
+        
+        // Bring panel to front of rendering order
+        createRiskPanel.transform.SetAsLastSibling();
+        
         createRiskPanel.SetActive(true);
+        Debug.Log($"[RiskCreationManager] Panel activated - activeSelf: {createRiskPanel.activeSelf}");
+        justOpenedPanel = true;
+        
         if (backgroundOverlay != null)
             backgroundOverlay.SetActive(true);
 
@@ -101,6 +107,9 @@ public class RiskCreationManager : MonoBehaviour
 
     public void CloseRiskPanel()
     {
+        // Deselect any button that might be selected
+        EventSystem.current.SetSelectedGameObject(null);
+        
         createRiskPanel.SetActive(false);
         if (backgroundOverlay != null)
             backgroundOverlay.SetActive(false);
