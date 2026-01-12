@@ -13,9 +13,16 @@ public class VotingManager : MonoBehaviour
     public float cardFlyDuration = 0.5f;
 
     [Header("References")]
-    public PlayedCardStore cardStorage; // assign in inspector
-    public TimerBarUI votingTimer;      // assign in inspector
+    public PlayedCardStore cardStorage;
+    public TimerBarUI votingTimer;
+    private GameObject activeCard;           // card in discussion
 
+    [Header("Handoff")]
+    public CardResultsHandler resultsHandler;
+
+    [Header("Fade")]
+    public CanvasGroup resultsCanvasGroup;   // fade ResultsUI
+    public float fadeDuration = 0.4f;
 
     private List<string> votes = new List<string>();
     private int yesCount = 0;
@@ -27,14 +34,14 @@ public class VotingManager : MonoBehaviour
     public void VoteYes()
     {
         votes.Add(playerName + " voted Yes");
-        yesCount++;       // increment yes count
+        yesCount++;
         UpdateResults();
     }
 
     public void VoteNo()
     {
         votes.Add(playerName + " voted No");
-        noCount++;        // increment no count
+        noCount++;
         UpdateResults();
     }
 
@@ -42,9 +49,7 @@ public class VotingManager : MonoBehaviour
     {
         resultsText.text = "Results:\n\n";
         foreach (string v in votes)
-        {
             resultsText.text += v + "\n\n";
-        }
     }
 
     public void ShowWinner()
@@ -56,8 +61,10 @@ public class VotingManager : MonoBehaviour
         else
             winnerText.text = "Winner: TIE";
 
-        // After showing winner, spawn the card in results
-        SpawnCardInResults();
+        // Move card to ResultsUI immediately after voting
+        MoveCardToResultsUI();
+        // Start the sequence: wait 2s, handover, fade
+        StartCoroutine(EndVotingSequence());
     }
 
     private void OnEnable()
@@ -67,7 +74,6 @@ public class VotingManager : MonoBehaviour
 
     private IEnumerator SpawnCardNextFrame()
     {
-        // Wait a frame to ensure the UI is active and layout resolved
         yield return null;
         yield return new WaitForEndOfFrame();
 
@@ -78,12 +84,8 @@ public class VotingManager : MonoBehaviour
         }
 
         GameObject prefab = cardStorage.PlayedCardPrefab;
-        Debug.Log("Spawning card prefab: " + prefab.name);
-
-        // Instantiate prefab without parent first
         GameObject cardGO = Instantiate(prefab);
 
-        // Make sure it's a UI element
         RectTransform card = cardGO.GetComponent<RectTransform>();
         if (card == null)
         {
@@ -91,11 +93,10 @@ public class VotingManager : MonoBehaviour
             yield break;
         }
 
-        // Parent under MainCardAnchor
+        // Parent under MainCardAnchor (DiscussionUI)
         card.SetParent(MainCardAnchor, false);
         card.localRotation = Quaternion.identity;
 
-        // Wait one frame to allow layout to settle
         yield return null;
 
         // Animate from below and scale up
@@ -112,31 +113,56 @@ public class VotingManager : MonoBehaviour
             yield return null;
         }
 
-        // At the very end of SpawnCardNextFrame(), after setting card.anchoredPosition
         card.anchoredPosition = finalPos;
 
-        // Start the timer now that the card is in place
         if (votingTimer != null)
             votingTimer.StartTimer();
 
-        Debug.Log("Card prefab parented, animated under MainCardAnchor, and scaled up.");
+        activeCard = cardGO; // keep reference
+        Debug.Log("Card spawned under MainCardAnchor (DiscussionUI).");
     }
 
-    private void SpawnCardInResults()
+    private void MoveCardToResultsUI()
     {
-        if (cardStorage == null || cardStorage.PlayedCardPrefab == null || ResultsCardAnchor == null)
-            return;
-
-        GameObject prefab = cardStorage.PlayedCardPrefab;
-        GameObject cardGO = Instantiate(prefab, ResultsCardAnchor);
-        RectTransform card = cardGO.GetComponent<RectTransform>();
-        if (card != null)
+        if (activeCard != null && ResultsCardAnchor != null)
         {
-            card.localScale = Vector3.one * 2f;   // scale for results
-            card.localRotation = Quaternion.identity;
-            card.anchoredPosition = Vector2.zero; // center in anchor
+            RectTransform rt = activeCard.GetComponent<RectTransform>();
+            rt.SetParent(ResultsCardAnchor, false);
+            rt.anchoredPosition = Vector2.zero;
+            rt.localScale = Vector3.one * 2f; // adjust size for ResultsUI
+
+            Debug.Log("Card moved to ResultsUI (ResultsCardAnchor).");
+        }
+    }
+
+    private IEnumerator EndVotingSequence()
+    {
+        // 1️⃣ Wait 2 seconds so card is visible in ResultsUI
+        yield return new WaitForSeconds(2f);
+
+        // 2️⃣ Hand over the card to CardResultsHandler
+        if (activeCard != null && resultsHandler != null)
+        {
+            resultsHandler.HandleCard(activeCard);
+            activeCard = null;
         }
 
-        Debug.Log("Card prefab spawned under ResultsCardAnchor.");
+        // 3️⃣ Fade out ResultsUI
+        if (resultsCanvasGroup != null)
+        {
+            float t = 0f;
+            while (t < fadeDuration)
+            {
+                t += Time.deltaTime;
+                resultsCanvasGroup.alpha = Mathf.Lerp(1f, 0f, t / fadeDuration);
+                yield return null;
+            }
+
+            resultsCanvasGroup.alpha = 0f;
+            resultsCanvasGroup.interactable = false;
+            resultsCanvasGroup.blocksRaycasts = false;
+        }
+
+        Debug.Log("ResultsUI faded out.");
     }
 }
