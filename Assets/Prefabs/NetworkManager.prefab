@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 4872170525432398183}
   - component: {fileID: 570415369854795535}
   - component: {fileID: 2180177414818622616}
+  - component: {fileID: 1645379818476283961}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -98,9 +99,9 @@ MonoBehaviour:
   m_MaxConnectAttempts: 60
   m_DisconnectTimeoutMS: 30000
   ConnectionData:
-    Address: 127.0.0.1
-    Port: 7777
-    ServerListenAddress: 127.0.0.1
+    Address: 10.0.0.185
+    Port: 5000
+    ServerListenAddress: 0.0.0.0
   DebugSimulator:
     PacketDelayMS: 0
     PacketJitterMS: 0
@@ -117,4 +118,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1fa104df9ec0a2645913174b2a6144e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkBootstrap
-  StartAsHost: 1
+  StartAsHost: 0
+--- !u!114 &1645379818476283961
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2222116638952493394}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61844f9741daedd458cea4bc4d690f44, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PersistAcrossScenes
