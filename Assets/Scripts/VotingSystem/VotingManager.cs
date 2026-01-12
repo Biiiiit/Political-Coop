@@ -161,8 +161,11 @@ public class VotingManager : MonoBehaviour
             resultsCanvasGroup.alpha = 0f;
             resultsCanvasGroup.interactable = false;
             resultsCanvasGroup.blocksRaycasts = false;
+
+            // ✅ Disable the entire ResultsUI GameObject
+            resultsCanvasGroup.gameObject.SetActive(false);
         }
 
-        Debug.Log("ResultsUI faded out.");
+        Debug.Log("ResultsUI faded out and disabled.");
     }
 }

@@ -46,7 +46,12 @@ public class CardResultsHandler : MonoBehaviour
         rt.localScale = Vector3.zero;
 
         ActivateCard();
+
+        // Destroy the card
         Destroy(card);
+
+        // ✅ Disable this CardResultsHandler GameObject
+        gameObject.SetActive(false);
     }
 
     private void ActivateCard()
