@@ -5,26 +5,44 @@ public class BoardManager : MonoBehaviour
 {
     public List<HexTile> tiles = new List<HexTile>();
 
+    [Header("Initial Colors by ID")]
+    public List<int> redIds = new List<int>();
+    public List<int> yellowIds = new List<int>();
+    public List<int> blueIds = new List<int>();
+    public List<int> greenIds = new List<int>();
+
     void Awake()
     {
         tiles.AddRange(FindObjectsOfType<HexTile>());
     }
 
-    public void GiveRandomTileRed()
+    void Start()
     {
-        if (tiles.Count == 0) return;
-
-        int randomIndex = Random.Range(0, tiles.Count);
-        tiles[randomIndex].SetColor(Color.red);
+        ApplyInitialColors();
+        ApplyRandomHeights();
     }
 
-    void Start()
+    void ApplyInitialColors()
     {
         foreach (HexTile tile in tiles)
         {
-            tile.height = Random.Range(0f, 0.5f);
-            tile.ApplyHeight();
+            if (redIds.Contains(tile.id))
+                tile.SetColor(Color.red);
+            else if (yellowIds.Contains(tile.id))
+                tile.SetColor(Color.yellow);
+            else if (blueIds.Contains(tile.id))
+                tile.SetColor(Color.blue);
+            else if (greenIds.Contains(tile.id))
+                tile.SetColor(Color.green);
         }
     }
 
+    void ApplyRandomHeights()
+    {
+        foreach (HexTile tile in tiles)
+        {
+            tile.height = Random.Range(0.2f, 0.6f);
+            tile.ApplyHeight();
+        }
+    }
 }
