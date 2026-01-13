@@ -21,11 +21,12 @@ public class GameBoard : MonoBehaviour
     {
         yield return new WaitForSeconds(loopDelaySeconds);
 
-        Debug.Log("[GameBoard] 5 seconds passed → returning to GameScreen.");
+        Debug.Log("[GameBoard] 5 seconds passed → requesting next phase.");
 
         if (GameFlowManager.Instance != null)
         {
-            GameFlowManager.Instance.GoNext();
+            // Call the GameManager's next phase instead
+            GameFlowManager.Instance.OnNextPhaseButtonClicked();
         }
         else
         {
