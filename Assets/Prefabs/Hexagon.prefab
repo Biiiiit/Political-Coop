@@ -832,7 +832,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoardCellRiskDisplay
   riskIconPrefab: {fileID: 5530273451768321539, guid: 3f6ec383e3ad8a040a421789a2a7ecaf, type: 3}
-  riskIconContainer: {fileID: 4265963318091376141, guid: 3f6ec383e3ad8a040a421789a2a7ecaf, type: 3}
-  maxVisibleRisks: 3
   riskHighlightColor: {r: 1, g: 0.5, b: 0.5, a: 1}
   riskHighlightAlpha: 0.7
+  riskAddedAnimationTrigger: ShowRisk
+  animationDuration: 0.5
+  iconSize: 0.6
