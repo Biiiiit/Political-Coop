@@ -61,7 +61,7 @@ public class PlayerRoleController : NetworkBehaviour
 
         if (playerUI != null)
         {
-            playerUI.UpdateSector(role, resourceLevel);
+            playerUI.UpdateSectorState(role, resourceLevel);
         }
     }
 
@@ -74,7 +74,13 @@ public class PlayerRoleController : NetworkBehaviour
 
         if (playerUI != null)
         {
-            playerUI.UpdateBoardState(turnNumber, crisisLevel, phase);
+            playerUI.ShowInfo($"Turn {turnNumber} - {phase} - Crisis {crisisLevel}");
+        }
+        
+        // Notify GameFlowManager of phase change
+        if (GameFlowManager.Instance != null)
+        {
+            GameFlowManager.Instance.OnPhaseChanged(phase);
         }
 
         // When leaving Vote phase, clear remaining pending votes (if any)
@@ -102,7 +108,7 @@ public class PlayerRoleController : NetworkBehaviour
 
         if (playerUI != null)
         {
-            playerUI.ShowVotePrompt(cardsToVoteOn);
+            playerUI.OnCardsToVoteOn(cardsCombined);
         }
     }
 
@@ -157,7 +163,7 @@ public class PlayerRoleController : NetworkBehaviour
 
         if (playerUI != null)
         {
-            playerUI.ShowAfterVoteMessage();
+            playerUI.ShowInfo("Vote submitted!");
         }
     }
 }
