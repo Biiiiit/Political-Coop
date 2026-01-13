@@ -471,10 +471,30 @@ public class GameManager : NetworkBehaviour
             Debug.Log($"[GameManager] Card {played.CardId} by {played.Role} " +
                       $"is {(accepted ? "ACCEPTED" : "REJECTED")}.");
 
-            // TODO later: apply real card effects if accepted
+            // Apply card effects if accepted
+            if (accepted)
+            {
+                ApplyCardEffectsToBoard(played);
+            }
         }
 
         EndOfTurnAndGoToNext();
+    }
+
+    private void ApplyCardEffectsToBoard(PlayedCard card)
+    {
+        // Get the card's assigned risks and add them to the board
+        Debug.Log($"[GameManager] Applying card {card.CardId} effects from {card.Role}");
+
+        if (BoardRiskManager.Instance == null)
+        {
+            Debug.LogWarning("[GameManager] BoardRiskManager.Instance not found - cannot apply card effects to board");
+            return;
+        }
+
+        // TODO: Get the actual card GameObject and its Assignedrisks component
+        // For now, this is a placeholder showing the integration point
+        // In full implementation, you'd need to track card objects or pass card data
     }
 
     private void EndOfTurnAndGoToNext()
