@@ -12,7 +12,7 @@ public class BoardRiskManager : MonoBehaviour
 
     // cellId (hex id) -> single risk (null if empty)
     private Dictionary<int, Risk> cellRisks = new Dictionary<int, Risk>();
-    
+
     // All hex tiles indexed by id for quick lookup
     private Dictionary<int, HexTile> hexTilesById = new Dictionary<int, HexTile>();
 
@@ -238,6 +238,6 @@ public class BoardRiskManager : MonoBehaviour
             return;
         }
         Risk randomRisk = RiskLibrary.Instance.allRisks[Random.Range(0, RiskLibrary.Instance.allRisks.Count)];
-        AddRiskToCell(randomCellId, randomRisk);    
+        AddRiskToCell(randomCellId, randomRisk);
     }
 }

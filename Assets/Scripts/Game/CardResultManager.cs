@@ -8,6 +8,7 @@ public class CardResultsHandler : MonoBehaviour
     public float spinSpeed = 720f;
     public float shrinkDuration = 0.6f;
     public GameBoard gameBoard;
+    public BoardRiskManager boardRiskManager;
 
     public void HandleCard(GameObject card)
     {
@@ -51,12 +52,11 @@ public class CardResultsHandler : MonoBehaviour
         // Destroy the card
         Destroy(card);
 
-        // ✅ Disable this CardResultsHandler GameObject
-        gameObject.SetActive(false);
     }
 
     private void ActivateCard()
     {
+        boardRiskManager.AddRandomRiskToRandomCell();
         gameBoard.LoopGame();
     }
 }
