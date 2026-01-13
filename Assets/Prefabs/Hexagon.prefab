@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 7920964925853474062}
   - component: {fileID: 3449205657675039687}
   - component: {fileID: -9138370708878851691}
+  - component: {fileID: 3659680616290291826}
   m_Layer: 0
   m_Name: Hexagon
   m_TagString: Untagged
@@ -818,3 +819,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HexOutline
   radius: 0.5
   yOffset: 0.01
+--- !u!114 &3659680616290291826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4974762827807635048}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad1f5fc7b60d374488957a01936fad5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BoardCellRiskDisplay
+  riskIconPrefab: {fileID: 5530273451768321539, guid: 3f6ec383e3ad8a040a421789a2a7ecaf, type: 3}
+  riskIconContainer: {fileID: 4265963318091376141, guid: 3f6ec383e3ad8a040a421789a2a7ecaf, type: 3}
+  maxVisibleRisks: 3
+  riskHighlightColor: {r: 1, g: 0.5, b: 0.5, a: 1}
+  riskHighlightAlpha: 0.7
