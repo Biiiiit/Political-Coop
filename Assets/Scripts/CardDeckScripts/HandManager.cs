@@ -100,7 +100,6 @@ public class HandManager : MonoBehaviour
             zoomedOriginalScale = card.localScale;
             zoomedOriginalWorldPos = card.position;
 
-            // Reparent to deckCanvas and keep world position
             card.SetParent(deckCanvas, true);
             card.position = zoomedOriginalWorldPos;
             card.SetAsLastSibling();
@@ -114,12 +113,10 @@ public class HandManager : MonoBehaviour
                     c.GetComponent<Button>().interactable = false;
             }
 
-            // Create dim background behind card
             CreateDimBackground();
 
-            // Animate card to center
             Vector3 targetWorldPos = deckCanvas.TransformPoint(((RectTransform)deckCanvas).rect.center);
-            StartCoroutine(ZoomCardCoroutine(card, targetWorldPos, zoomedOriginalScale * zoomScale, true)); // true = show button after zoom
+            StartCoroutine(ZoomCardCoroutine(card, targetWorldPos, zoomedOriginalScale * zoomScale, true));
         }
         else if (zoomedCard == card)
         {
@@ -129,7 +126,7 @@ public class HandManager : MonoBehaviour
 
     private void CreateDimBackground()
     {
-        if (dimBackground != null) return; // Already exists
+        if (dimBackground != null) return;
 
         GameObject bgGO = new GameObject("DimBackground", typeof(RectTransform));
         bgGO.transform.SetParent(deckCanvas, false);
@@ -141,9 +138,8 @@ public class HandManager : MonoBehaviour
         rt.offsetMax = Vector2.zero;
 
         dimBackground = bgGO.AddComponent<Image>();
-        dimBackground.color = new Color(0, 0, 0, 0); // Start transparent
+        dimBackground.color = new Color(0, 0, 0, 0);
 
-        // Place background **just below the zoomed card** in hierarchy
         if (zoomedCard != null)
             bgGO.transform.SetSiblingIndex(zoomedCard.GetSiblingIndex());
 
@@ -192,14 +188,12 @@ public class HandManager : MonoBehaviour
 
     private IEnumerator ZoomOutRoutine(RectTransform card)
     {
-        // Hide the card button immediately
         HideCardButton();
 
         Vector3 startPos = card.position;
         Vector3 startScale = card.localScale;
         float t = 0f;
 
-        // Fade background back
         if (dimBackground != null)
             StartCoroutine(FadeBackground(0.5f, 0f, zoomDuration));
 
@@ -215,10 +209,8 @@ public class HandManager : MonoBehaviour
         card.position = zoomedOriginalWorldPos;
         card.localScale = zoomedOriginalScale;
 
-        // Reparent back to hand
         card.SetParent(zoomedOriginalParent, true);
 
-        // Remove background
         if (dimBackground != null)
         {
             Destroy(dimBackground.gameObject);
@@ -232,7 +224,7 @@ public class HandManager : MonoBehaviour
     {
         if (!isCardZoomed || zoomedCard == null) return;
 
-        GameObject prefab = deckManager.GetPrefabForCard(zoomedCard);
+        GameObject prefab = deckManager != null ? deckManager.GetPrefabForCard(zoomedCard) : null;
         if (prefab != null)
         {
             PlayedCardStore.Instance.StoreCard(prefab);
@@ -241,10 +233,6 @@ public class HandManager : MonoBehaviour
         HideCardButton();
         StartCoroutine(PlayCardRoutine(zoomedCard));
     }
-
-    [SerializeField] private GameObject deckCanvasGO;
-    [SerializeField] private GameObject discussionUI;
-    [SerializeField] public VotingManager VotingManagerInstance;
 
     private IEnumerator PlayCardRoutine(RectTransform card)
     {
@@ -264,11 +252,13 @@ public class HandManager : MonoBehaviour
         cardsInHand.Remove(card);
         originalPositions.Remove(card);
 
-        if (deckCanvasGO != null) deckCanvasGO.SetActive(false);
-        if (discussionUI != null) discussionUI.SetActive(true);
-        if (VotingManagerInstance != null) VotingManagerInstance.gameObject.SetActive(true);
-
         ResetHandState();
+
+        // ✅ Tell the scene controller: card played -> voting phase
+        if (GameScreen.Instance != null)
+            GameScreen.Instance.OnCardPlayed();
+        else
+            Debug.LogWarning("[HandManager] GameScreen.Instance not found. Add GameScreen.cs to GameScreen scene.");
     }
 
     private void ResetHandState()
