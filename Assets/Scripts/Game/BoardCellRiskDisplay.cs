@@ -47,9 +47,9 @@ public class BoardCellRiskDisplay : MonoBehaviour
     {
         GameObject canvasObj = new GameObject("RiskIconCanvas");
         canvasObj.transform.SetParent(transform);
-        canvasObj.transform.localPosition = new Vector3(0, 0.6f, 0); // Position above the tile
-        // Rotate to face upward for top-down camera view
-        canvasObj.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+        canvasObj.transform.localPosition = new Vector3(0, 1.2f, 0); // Position higher above the tile
+        // Rotate to face the angled camera (50 degrees on X axis)
+        canvasObj.transform.localRotation = Quaternion.Euler(50f, 0f, 0f);
 
         tileCanvas = canvasObj.AddComponent<Canvas>();
         tileCanvas.renderMode = RenderMode.WorldSpace;
