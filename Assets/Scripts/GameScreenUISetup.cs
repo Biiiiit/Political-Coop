@@ -1,22 +1,23 @@
 using UnityEngine;
 
 /// <summary>
-/// Automatically organizes GameScreen UI elements into Board and Player canvas groups.
-/// Board: Shows card being voted on (shared screen)
-/// Player: Shows voting buttons and hand (tablets)
+/// Splits DiscussionUI into separate Board and Player components.
+/// Board: Shows MainCardAnchor (card being voted on)
+/// Player: Shows voting buttons (Yes/No)
 /// </summary>
 public class GameScreenUISetup : MonoBehaviour
 {
-    [Header("Player UI (Tablets)")]
-    [Tooltip("Names of UI GameObjects shown on tablets")]
+    [Header("GameObject Names to Find")]
     [SerializeField] private string deckCanvasName = "DeckCanvas";
     [SerializeField] private string discussionUIName = "DiscussionUI";
-    
-    [Header("Board UI (Shared Screen)")]
-    [Tooltip("Names of UI GameObjects shown on shared screen")]
     [SerializeField] private string resultsUIName = "ResultsUI";
-    // The main card anchor is typically inside DiscussionUI
-    // We need to find it by searching through the hierarchy
+    
+    [Header("Children to Split from DiscussionUI")]
+    [Tooltip("These will go to BOARD (shared screen)")]
+    [SerializeField] private string[] boardChildren = { "MainCardAnchor" };
+    
+    [Tooltip("These will stay in PLAYER (tablets) - leave empty to keep all remaining")]
+    [SerializeField] private string[] playerChildren = { "VoteYesButton", "VoteNoButton", "TimerBar", "VotingButtons" };
     
     [Header("References")]
     [SerializeField] private UIModeSwitcher uiModeSwitcher;
@@ -28,106 +29,142 @@ public class GameScreenUISetup : MonoBehaviour
 
     private void SetupUIHierarchy()
     {
-        Debug.Log("[GameScreenUISetup] Starting UI organization...");
+        Debug.Log("[GameScreenUISetup] ============================================");
+        Debug.Log("[GameScreenUISetup] Starting UI Split...");
 
         // Create parent containers
         GameObject playerCanvasRoot = new GameObject("PlayerCanvasRoot");
         GameObject boardCanvasRoot = new GameObject("BoardCanvasRoot");
 
-        // Find UI elements in scene
+        // Find main UI elements
         GameObject deckCanvas = GameObject.Find(deckCanvasName);
         GameObject discussionUI = GameObject.Find(discussionUIName);
         GameObject resultsUI = GameObject.Find(resultsUIName);
 
-        // === PLAYER UI (Tablets) ===
-        // Players see: Their hand + voting buttons
-        
+        // === PLAYER CANVAS (Tablets) ===
+        // Move entire DeckCanvas (player's hand)
         if (deckCanvas != null)
         {
             deckCanvas.transform.SetParent(playerCanvasRoot.transform, true);
-            Debug.Log($"[GameScreenUISetup] ✅ Moved {deckCanvasName} to PlayerCanvasRoot (Tablets)");
+            Debug.Log($"[GameScreenUISetup] ✅ PLAYER: Moved {deckCanvasName}");
         }
         else
         {
             Debug.LogWarning($"[GameScreenUISetup] ⚠️ Could not find {deckCanvasName}");
         }
 
+        // === SPLIT DiscussionUI ===
         if (discussionUI != null)
         {
-            discussionUI.transform.SetParent(playerCanvasRoot.transform, true);
-            Debug.Log($"[GameScreenUISetup] ✅ Moved {discussionUIName} to PlayerCanvasRoot (Tablets)");
+            Debug.Log($"[GameScreenUISetup] 🔪 SPLITTING {discussionUIName}...");
+            
+            // Create a container for player-side voting UI
+            GameObject votingUIContainer = new GameObject("VotingUI");
+            votingUIContainer.transform.SetParent(playerCanvasRoot.transform, false);
+            
+            // Copy canvas properties if DiscussionUI is a canvas
+            Canvas discussionCanvas = discussionUI.GetComponent<Canvas>();
+            if (discussionCanvas != null)
+            {
+                Canvas votingCanvas = votingUIContainer.AddComponent<Canvas>();
+                votingCanvas.renderMode = discussionCanvas.renderMode;
+                votingCanvas.sortingOrder = discussionCanvas.sortingOrder;
+                
+                var canvasScaler = discussionUI.GetComponent<UnityEngine.UI.CanvasScaler>();
+                if (canvasScaler != null)
+                {
+                    var newScaler = votingUIContainer.AddComponent<UnityEngine.UI.CanvasScaler>();
+                    newScaler.uiScaleMode = canvasScaler.uiScaleMode;
+                    newScaler.referenceResolution = canvasScaler.referenceResolution;
+                    newScaler.matchWidthOrHeight = canvasScaler.matchWidthOrHeight;
+                }
+                
+                var graphicRaycaster = discussionUI.GetComponent<UnityEngine.UI.GraphicRaycaster>();
+                if (graphicRaycaster != null)
+                {
+                    votingUIContainer.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+                }
+            }
+            
+            // Move board children (MainCardAnchor) to board canvas
+            foreach (string childName in boardChildren)
+            {
+                Transform child = FindDeepChild(discussionUI.transform, childName);
+                if (child != null)
+                {
+                    child.SetParent(boardCanvasRoot.transform, true);
+                    Debug.Log($"[GameScreenUISetup]   ✅ BOARD: Moved {childName}");
+                }
+                else
+                {
+                    Debug.LogWarning($"[GameScreenUISetup]   ⚠️ Could not find {childName} in {discussionUIName}");
+                }
+            }
+            
+            // Move remaining children (voting buttons) to player canvas
+            // Move all direct children that weren't moved to board
+            Transform[] children = new Transform[discussionUI.transform.childCount];
+            for (int i = 0; i < discussionUI.transform.childCount; i++)
+            {
+                children[i] = discussionUI.transform.GetChild(i);
+            }
+            
+            foreach (Transform child in children)
+            {
+                // Only move if it wasn't already moved to board
+                if (child != null && child.parent == discussionUI.transform)
+                {
+                    child.SetParent(votingUIContainer.transform, true);
+                    Debug.Log($"[GameScreenUISetup]   ✅ PLAYER: Moved {child.name}");
+                }
+            }
+            
+            // Destroy the now-empty DiscussionUI GameObject
+            Destroy(discussionUI);
+            Debug.Log($"[GameScreenUISetup] ♻️ Destroyed empty {discussionUIName}");
         }
         else
         {
             Debug.LogWarning($"[GameScreenUISetup] ⚠️ Could not find {discussionUIName}");
         }
 
-        // === BOARD UI (Shared Screen) ===
-        // Shared screen shows: Current card + results
-        
+        // === BOARD CANVAS (Shared Screen) ===
         if (resultsUI != null)
         {
             resultsUI.transform.SetParent(boardCanvasRoot.transform, true);
-            Debug.Log($"[GameScreenUISetup] ✅ Moved {resultsUIName} to BoardCanvasRoot (Shared Screen)");
+            Debug.Log($"[GameScreenUISetup] ✅ BOARD: Moved {resultsUIName}");
         }
         else
         {
             Debug.LogWarning($"[GameScreenUISetup] ⚠️ Could not find {resultsUIName}");
         }
 
-        // Find MainCardAnchor (usually inside DiscussionUI prefab)
-        // This needs to be moved to board canvas for shared screen display
-        Transform mainCardAnchor = FindDeepChild(discussionUI?.transform, "MainCardAnchor");
-        if (mainCardAnchor != null)
-        {
-            mainCardAnchor.SetParent(boardCanvasRoot.transform, true);
-            Debug.Log($"[GameScreenUISetup] ✅ Moved MainCardAnchor to BoardCanvasRoot (Shared Screen)");
-        }
-        else
-        {
-            Debug.LogWarning($"[GameScreenUISetup] ⚠️ Could not find MainCardAnchor - looking for it in scene root...");
-            GameObject mainCardObj = GameObject.Find("MainCardAnchor");
-            if (mainCardObj != null)
-            {
-                mainCardObj.transform.SetParent(boardCanvasRoot.transform, true);
-                Debug.Log($"[GameScreenUISetup] ✅ Found and moved MainCardAnchor to BoardCanvasRoot");
-            }
-        }
-
-        // Assign to UIModeSwitcher if provided
+        // Assign to UIModeSwitcher
         if (uiModeSwitcher != null)
         {
-            // Use reflection to set private fields
             var boardField = typeof(UIModeSwitcher).GetField("boardCanvasRoot", 
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             var playerField = typeof(UIModeSwitcher).GetField("playerCanvasRoot", 
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
             if (boardField != null)
-            {
                 boardField.SetValue(uiModeSwitcher, boardCanvasRoot);
-                Debug.Log("[GameScreenUISetup] ✅ Assigned BoardCanvasRoot to UIModeSwitcher");
-            }
-
+            
             if (playerField != null)
-            {
                 playerField.SetValue(uiModeSwitcher, playerCanvasRoot);
-                Debug.Log("[GameScreenUISetup] ✅ Assigned PlayerCanvasRoot to UIModeSwitcher");
-            }
+            
+            Debug.Log("[GameScreenUISetup] ✅ Connected to UIModeSwitcher");
         }
         else
         {
-            Debug.LogError("[GameScreenUISetup] ❌ UIModeSwitcher reference not set! Assign UIModeRoot in inspector.");
+            Debug.LogError("[GameScreenUISetup] ❌ UIModeSwitcher not assigned!");
         }
 
-        Debug.Log("[GameScreenUISetup] 🎯 UI hierarchy setup complete!");
-        Debug.Log("[GameScreenUISetup] Press T = Tablet view (voting buttons + hand)");
-        Debug.Log("[GameScreenUISetup] Press G = Game/Board view (card being voted on)");
+        Debug.Log("[GameScreenUISetup] 🎯 Setup Complete!");
+        Debug.Log("[GameScreenUISetup] G = Board (card only) | T = Tablet (buttons + hand)");
+        Debug.Log("[GameScreenUISetup] ============================================");
     }
 
-    /// <summary>
-    /// Recursively searches for a child by name in the hierarchy
-    /// </summary>
     private Transform FindDeepChild(Transform parent, string childName)
     {
         if (parent == null) return null;
