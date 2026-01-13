@@ -8,11 +8,6 @@ public class GameBoard : MonoBehaviour
 
     private void Start()
     {
-
-    }
-
-    public void LoopGame()
-    {
         Debug.Log("[GameBoard] Scene loaded. Looping back in " + loopDelaySeconds + " seconds.");
         StartCoroutine(LoopBackRoutine());
     }

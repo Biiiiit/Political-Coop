@@ -161,7 +161,7 @@ public class DeckManager : MonoBehaviour
             yield break;
         }
 
-        rt.sizeDelta = new Vector2(280, 480);
+        rt.sizeDelta = new Vector2(280, 449);
 
         CanvasGroup cg = card.AddComponent<CanvasGroup>();
         cg.alpha = 0f;
