@@ -40,12 +40,18 @@ public class BoardController : NetworkBehaviour
 
     public void OnBoardStateUpdated(int turnNumber, int crisisLevel, Phase phase)
     {
-        Debug.Log($"[Board] Turn {turnNumber}, Crisis {crisisLevel}, Phase {phase}");
+        Debug.Log($"[BoardController] Turn {turnNumber}, Crisis {crisisLevel}, Phase {phase}");
 
         if (boardUI != null)
         {
             boardUI.UpdateBoard(turnNumber, crisisLevel, phase);
             boardUI.AddLogMessage($"Board updated: Turn {turnNumber}, Phase {phase}, Crisis {crisisLevel}");
+        }
+        
+        // Notify GameFlowManager of phase change
+        if (GameFlowManager.Instance != null)
+        {
+            GameFlowManager.Instance.OnPhaseChanged(phase);
         }
     }
 
@@ -56,33 +62,33 @@ public class BoardController : NetworkBehaviour
         // Debug: press N on board to go to next phase
         if (Keyboard.current != null && Keyboard.current.nKey.wasPressedThisFrame)
         {
-            Debug.Log("[Board] N key detected!");
+            Debug.Log("[BoardController] N key detected!");
             RequestNextPhase();
         }
     }
 
     public void RequestNextPhase()
     {
-        Debug.Log("[Board] RequestNextPhase called!");
+        Debug.Log("[BoardController] RequestNextPhase called!");
         
         if (GameManager.Instance == null)
         {
-            Debug.LogError("[Board] GameManager.Instance is null!");
+            Debug.LogError("[BoardController] GameManager.Instance is null!");
             return;
         }
         
-        Debug.Log("[Board] Requesting next phase via GameManager.");
+        Debug.Log("[BoardController] Requesting next phase via GameManager.");
         GameManager.Instance.NextPhaseServerRpc();
     }
 
     // Hook this to the NextPhaseButton OnClick
     public void OnNextPhaseButtonClicked()
     {
-        Debug.Log("[Board] OnNextPhaseButtonClicked called!");
+        Debug.Log("[BoardController] OnNextPhaseButtonClicked called!");
         
         if (!IsServer) 
         {
-            Debug.LogWarning("[Board] Not server, cannot advance phase!");
+            Debug.LogWarning("[BoardController] Not server, cannot advance phase!");
             return;
         }
         
