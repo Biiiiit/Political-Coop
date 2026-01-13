@@ -57,6 +57,14 @@ public class CardResultsHandler : MonoBehaviour
     private void ActivateCard()
     {
         boardRiskManager.AddRandomRiskToRandomCell();
-        gameBoard.LoopGame();
+        
+        if (GameFlowManager.Instance != null)
+        {
+            GameFlowManager.Instance.OnNextPhaseButtonClicked();
+        }
+        else
+        {
+            Debug.LogError("[CardResultsHandler] GameFlowManager.Instance is NULL.");
+        }
     }
 }
