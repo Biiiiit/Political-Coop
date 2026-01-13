@@ -16,7 +16,6 @@ public class GameFlowManager : NetworkBehaviour
 
     [Header("Current State")]
     private Phase currentPhase = Phase.Lobby;
-    private bool screensLoaded = false;
 
     // Track which scenes are currently loaded
     private bool cardLibraryLoaded = false;
@@ -52,7 +51,6 @@ public class GameFlowManager : NetworkBehaviour
         
         yield return new WaitUntil(() => asyncLoad.isDone);
         
-        screensLoaded = true;
         Debug.Log("[GameFlowManager] Screens scene loaded");
         
         // Set active scene for lighting/skybox purposes
