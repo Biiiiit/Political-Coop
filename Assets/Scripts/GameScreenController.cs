@@ -81,9 +81,9 @@ public class GameScreen : MonoBehaviour
     /// </summary>
     public void FinishVoting()
     {
-        Debug.Log("[GameScreen] FinishVoting called -> GoNext()");
+        Debug.Log("[GameScreen] FinishVoting called -> requesting next phase");
         if (GameFlowManager.Instance != null)
-            GameFlowManager.Instance.GoNext();
+            GameFlowManager.Instance.OnNextPhaseButtonClicked();
         else
             Debug.LogError("[GameScreen] GameFlowManager.Instance not found.");
     }
