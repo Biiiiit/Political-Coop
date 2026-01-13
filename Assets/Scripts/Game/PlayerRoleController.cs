@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
+using UnityEngine.InputSystem;
 
 public class PlayerRoleController : NetworkBehaviour
 {
@@ -110,7 +111,7 @@ public class PlayerRoleController : NetworkBehaviour
         if (!IsOwner) return;
 
         // Debug: press P in Play phase to "play a card" (useful on PC)
-        if (Input.GetKeyDown(KeyCode.P) && currentPhase == Phase.Play)
+        if (Keyboard.current != null && Keyboard.current.pKey.wasPressedThisFrame && currentPhase == Phase.Play)
         {
             RequestPlayCard("FAKE_CARD_P_KEY");
         }

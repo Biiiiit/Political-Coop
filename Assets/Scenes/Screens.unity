@@ -1012,7 +1012,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2180177414818622616, guid: 7d046bb7d96bcd240bc1ed45e11ab135, type: 3}
       propertyPath: StartAsHost
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2222116638952493394, guid: 7d046bb7d96bcd240bc1ed45e11ab135, type: 3}
       propertyPath: m_Name
@@ -1176,18 +1176,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1208135442584568880, guid: 22a85650416724a48845216bca845b14, type: 3}
+      propertyPath: boardCanvasRoot
+      value: 
+      objectReference: {fileID: 1967053623}
+    - target: {fileID: 1208135442584568880, guid: 22a85650416724a48845216bca845b14, type: 3}
+      propertyPath: playerCanvasRoot
+      value: 
+      objectReference: {fileID: 52162289}
     - target: {fileID: 1520706072696525470, guid: 22a85650416724a48845216bca845b14, type: 3}
       propertyPath: m_Name
       value: UIModeRoot
       objectReference: {fileID: 0}
-    - target: {fileID: 3594332287126791524, guid: 22a85650416724a48845216bca845b14, type: 3}
-      propertyPath: boardCanvasRoot
-      value: 
-      objectReference: {fileID: 1967053623}
-    - target: {fileID: 3594332287126791524, guid: 22a85650416724a48845216bca845b14, type: 3}
-      propertyPath: playerCanvasRoot
-      value: 
-      objectReference: {fileID: 52162289}
     - target: {fileID: 5506917618722640864, guid: 22a85650416724a48845216bca845b14, type: 3}
       propertyPath: m_LocalPosition.x
       value: 190.7207
@@ -1233,35 +1233,29 @@ PrefabInstance:
       value: 254424435
       objectReference: {fileID: 0}
     - target: {fileID: 8613069820317296338, guid: 22a85650416724a48845216bca845b14, type: 3}
-      propertyPath: InScenePlacedSourceGlobalObjectIdHash
-      value: 1066802323
+      propertyPath: ActiveSceneSynchronization
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8613069820317296338, guid: 22a85650416724a48845216bca845b14, type: 3}
+      propertyPath: SceneMigrationSynchronization
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1520706072696525470, guid: 22a85650416724a48845216bca845b14, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 7945055530896883914}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 22a85650416724a48845216bca845b14, type: 3}
---- !u!1 &7945055530896883913 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1520706072696525470, guid: 22a85650416724a48845216bca845b14, type: 3}
+--- !u!114 &7945055530896883914 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 9186970925184007324, guid: 22a85650416724a48845216bca845b14, type: 3}
   m_PrefabInstance: {fileID: 7945055530896883912}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &7945055530896883914
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7945055530896883913}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1296a1e79f6a03340b5c95e10450fcaf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TabletSceneSwitchButton
-  sceneName: GameLibrary
 --- !u!1001 &9101864607795459246
 PrefabInstance:
   m_ObjectHideFlags: 0

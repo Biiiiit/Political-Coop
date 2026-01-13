@@ -10,7 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 5506917618722640864}
   - component: {fileID: 8613069820317296338}
-  - component: {fileID: 3594332287126791524}
+  - component: {fileID: 9186970925184007324}
+  - component: {fileID: 1208135442584568880}
   m_Layer: 0
   m_Name: UIModeRoot
   m_TagString: Untagged
@@ -45,8 +46,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2232920282
-  InScenePlacedSourceGlobalObjectIdHash: 0
+  GlobalObjectIdHash: 254424435
+  InScenePlacedSourceGlobalObjectIdHash: 1066802323
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
@@ -58,7 +59,7 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &3594332287126791524
+--- !u!114 &9186970925184007324
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -67,9 +68,23 @@ MonoBehaviour:
   m_GameObject: {fileID: 1520706072696525470}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d4f5160afa003a94d96aa372821f0230, type: 3}
+  m_Script: {fileID: 11500000, guid: 1296a1e79f6a03340b5c95e10450fcaf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TabletSceneSwitchButton
+  sceneName: GameLibrary
+--- !u!114 &1208135442584568880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1520706072696525470}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ade150363eca5ac4d8bec07efceb90fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIModeSwitcher
   ShowTopMostFoldoutHeaderGroup: 1
   boardCanvasRoot: {fileID: 0}
   playerCanvasRoot: {fileID: 0}
+  enableDebugKeys: 1
