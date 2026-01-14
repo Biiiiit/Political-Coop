@@ -7,6 +7,7 @@ public class GameScreen : MonoBehaviour
     [Header("References")]
     [SerializeField] private DeckManager deckManager;
     [SerializeField] private HandManager handManager;
+    [SerializeField] private GameScreenSyncHelper syncHelper;
 
     [Header("UI")]
     [SerializeField] private GameObject deckCanvasGO; // Draw/cards UI
@@ -59,12 +60,18 @@ public class GameScreen : MonoBehaviour
     /// <summary>
     /// Called by HandManager after the player plays a card.
     /// </summary>
-    public void OnCardPlayed()
+    public void OnCardPlayed(string cardId = "", string cardTitle = "")
     {
         if (cardPlayed) return;
         cardPlayed = true;
 
         Debug.Log("[GameScreen] Card played -> Voting phase started.");
+
+        // Sync card play to GameBoard
+        if (syncHelper != null && !string.IsNullOrEmpty(cardId))
+        {
+            syncHelper.OnCardPlayed(cardId, cardTitle);
+        }
 
         if (deckCanvasGO != null) deckCanvasGO.SetActive(false);
         if (votingUI != null) votingUI.SetActive(true);
@@ -81,10 +88,17 @@ public class GameScreen : MonoBehaviour
     /// </summary>
     public void FinishVoting()
     {
-        Debug.Log("[GameScreen] FinishVoting called -> requesting next phase");
+        Debug.Log("[GameScreen] FinishVoting called -> showing results on shared screen");
+        
+        // No scene transition needed - shared screen will show board in same scene
+        // Just notify that voting is complete
         if (GameFlowManager.Instance != null)
+        {
             GameFlowManager.Instance.OnNextPhaseButtonClicked();
+        }
         else
-            Debug.LogError("[GameScreen] GameFlowManager.Instance not found.");
+        {
+            Debug.Log("[GameScreen] Voting complete. Results should display on shared screen.");
+        }
     }
 }

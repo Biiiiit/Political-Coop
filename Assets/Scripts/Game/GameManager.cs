@@ -6,6 +6,9 @@ public class GameManager : NetworkBehaviour
 {
     public static GameManager Instance { get; private set; }
 
+    [Header("Dual Screen Setup")]
+    [SerializeField] private GameObject dualScreenNetworkManagerPrefab;
+
     // clientId -> role
     private readonly Dictionary<ulong, Role> _playerRoles = new();
     // clientId -> sector state
@@ -68,6 +71,31 @@ public class GameManager : NetworkBehaviour
             crisisLevel: 0,
             phase: Phase.Lobby
         );
+    }
+
+    void Start()
+    {
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
+        {
+            if (dualScreenNetworkManagerPrefab != null)
+            {
+                var instance = Instantiate(dualScreenNetworkManagerPrefab);
+                var networkObject = instance.GetComponent<NetworkObject>();
+                if (networkObject != null)
+                {
+                    networkObject.Spawn();
+                    Debug.Log("[GameManager] DualScreenNetworkManager spawned");
+                }
+                else
+                {
+                    Debug.LogError("[GameManager] DualScreenNetworkManager prefab missing NetworkObject component");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[GameManager] DualScreenNetworkManager prefab not assigned in Inspector");
+            }
+        }
     }
 
     public override void OnNetworkSpawn()

@@ -418,9 +418,12 @@ public class CardLibraryUI : MonoBehaviour
 
     public void OnBackButtonPressed()
     {
-        if (!string.IsNullOrEmpty(backSceneName))
+        if (ScreenFlowController.Instance != null && !string.IsNullOrEmpty(backSceneName))
         {
-            // When you have your previous scene, put its name in backSceneName
+            ScreenFlowController.Instance.NavigateToScene(backSceneName);
+        }
+        else if (!string.IsNullOrEmpty(backSceneName))
+        {
             SceneManager.LoadScene(backSceneName);
         }
         else
@@ -438,9 +441,12 @@ public class CardLibraryUI : MonoBehaviour
             return;
         }
 
-        if (!string.IsNullOrEmpty(proceedSceneName))
+        if (ScreenFlowController.Instance != null)
         {
-            // When you have your next scene, put its name in proceedSceneName
+            ScreenFlowController.Instance.NavigateToNextScreen();
+        }
+        else if (!string.IsNullOrEmpty(proceedSceneName))
+        {
             SceneManager.LoadScene(proceedSceneName);
         }
         else
@@ -450,16 +456,20 @@ public class CardLibraryUI : MonoBehaviour
     }
     
     public void OnCreateNewCardButtonPressed()
-{
-    if (!string.IsNullOrEmpty(createCardSceneName))
     {
-        SceneManager.LoadScene(createCardSceneName);
+        if (ScreenFlowController.Instance != null && !string.IsNullOrEmpty(createCardSceneName))
+        {
+            ScreenFlowController.Instance.NavigateToScene(createCardSceneName);
+        }
+        else if (!string.IsNullOrEmpty(createCardSceneName))
+        {
+            SceneManager.LoadScene(createCardSceneName);
+        }
+        else
+        {
+            Debug.Log("Create New Card button pressed – no createCardSceneName configured yet.");
+        }
     }
-    else
-    {
-        Debug.Log("Create New Card button pressed – no createCardSceneName configured yet.");
-    }
-}
 
     private bool AreLimitsSatisfied()
     {
