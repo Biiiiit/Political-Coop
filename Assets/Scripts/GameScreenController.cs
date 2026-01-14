@@ -10,7 +10,6 @@ public class GameScreen : MonoBehaviour
     [SerializeField] private GameScreenSyncHelper syncHelper;
 
     [Header("UI")]
-    [SerializeField] private GameObject deckCanvasGO; // Draw/cards UI
     [SerializeField] private GameObject votingUI;     // Voting UI (inside this scene)
 
     [Header("Auto Flow")]
@@ -44,7 +43,6 @@ public class GameScreen : MonoBehaviour
 
         cardPlayed = false;
 
-        if (deckCanvasGO != null) deckCanvasGO.SetActive(true);
         if (votingUI != null) votingUI.SetActive(false);
 
         if (deckManager == null)
@@ -73,7 +71,6 @@ public class GameScreen : MonoBehaviour
             syncHelper.OnCardPlayed(cardId, cardTitle);
         }
 
-        if (deckCanvasGO != null) deckCanvasGO.SetActive(false);
         if (votingUI != null) votingUI.SetActive(true);
 
         if (autoFinishVoting)
@@ -89,7 +86,7 @@ public class GameScreen : MonoBehaviour
     public void FinishVoting()
     {
         Debug.Log("[GameScreen] FinishVoting called -> showing results on shared screen");
-        
+
         // No scene transition needed - shared screen will show board in same scene
         // Just notify that voting is complete
         if (GameFlowManager.Instance != null)
