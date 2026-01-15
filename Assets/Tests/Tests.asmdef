@@ -1,0 +1,12 @@
+{
+    "name": "Tests",
+    "references": [
+        "RiskDisasterSystem"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ]
+}
