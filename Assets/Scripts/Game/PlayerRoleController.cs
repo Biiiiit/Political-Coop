@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
+using UnityEngine.InputSystem;
 
 public class PlayerRoleController : NetworkBehaviour
 {
@@ -60,7 +61,7 @@ public class PlayerRoleController : NetworkBehaviour
 
         if (playerUI != null)
         {
-            playerUI.UpdateSector(role, resourceLevel);
+            playerUI.UpdateSectorState(role, resourceLevel);
         }
     }
 
@@ -73,7 +74,13 @@ public class PlayerRoleController : NetworkBehaviour
 
         if (playerUI != null)
         {
-            playerUI.UpdateBoardState(turnNumber, crisisLevel, phase);
+            playerUI.ShowInfo($"Turn {turnNumber} - {phase} - Crisis {crisisLevel}");
+        }
+        
+        // Notify GameFlowManager of phase change
+        if (GameFlowManager.Instance != null)
+        {
+            GameFlowManager.Instance.OnPhaseChanged(phase);
         }
 
         // When leaving Vote phase, clear remaining pending votes (if any)
@@ -101,7 +108,7 @@ public class PlayerRoleController : NetworkBehaviour
 
         if (playerUI != null)
         {
-            playerUI.ShowVotePrompt(cardsToVoteOn);
+            playerUI.OnCardsToVoteOn(cardsCombined);
         }
     }
 
@@ -110,7 +117,7 @@ public class PlayerRoleController : NetworkBehaviour
         if (!IsOwner) return;
 
         // Debug: press P in Play phase to "play a card" (useful on PC)
-        if (Input.GetKeyDown(KeyCode.P) && currentPhase == Phase.Play)
+        if (Keyboard.current != null && Keyboard.current.pKey.wasPressedThisFrame && currentPhase == Phase.Play)
         {
             RequestPlayCard("FAKE_CARD_P_KEY");
         }
@@ -156,7 +163,7 @@ public class PlayerRoleController : NetworkBehaviour
 
         if (playerUI != null)
         {
-            playerUI.ShowAfterVoteMessage();
+            playerUI.ShowInfo("Vote submitted!");
         }
     }
 }

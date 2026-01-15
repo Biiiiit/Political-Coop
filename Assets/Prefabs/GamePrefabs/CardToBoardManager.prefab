@@ -46,6 +46,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   cardAnchor: {fileID: 3575002264757431584}
+  startDelay: 1
   spinSpeed: 720
   shrinkDuration: 0.6
 --- !u!1001 &3507129064711173149
@@ -56,6 +57,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4370774062458636153}
     m_Modifications:
+    - target: {fileID: 87581409154947389, guid: 111816a13daff7947abe9a2d9549421a, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 87581409154947389, guid: 111816a13daff7947abe9a2d9549421a, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.5
+      objectReference: {fileID: 0}
     - target: {fileID: 290376522040536164, guid: 111816a13daff7947abe9a2d9549421a, type: 3}
       propertyPath: m_Color.a
       value: 0
@@ -71,6 +80,10 @@ PrefabInstance:
     - target: {fileID: 290376522040536164, guid: 111816a13daff7947abe9a2d9549421a, type: 3}
       propertyPath: m_Color.r
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 290376522040536164, guid: 111816a13daff7947abe9a2d9549421a, type: 3}
+      propertyPath: m_RaycastTarget
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1127686209357135618, guid: 111816a13daff7947abe9a2d9549421a, type: 3}
       propertyPath: resultsUI

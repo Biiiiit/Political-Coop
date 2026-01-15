@@ -14,7 +14,7 @@ public class GameLibrarySceneUI : MonoBehaviour
     [SerializeField] private Sprite housingImage;
 
     [Header("Navigation")]
-    [SerializeField] private string nextSceneName = "CardLibraryScene";
+    [SerializeField] private string nextSceneName = "CardLibraryUI";
 
     private void Start()
     {
@@ -46,6 +46,14 @@ public class GameLibrarySceneUI : MonoBehaviour
     private void OnThemeSelected(string themeId)
     {
         GameSession.SelectedThemeId = themeId;
-        SceneManager.LoadScene(nextSceneName);
+        
+        if (ScreenFlowController.Instance != null)
+        {
+            ScreenFlowController.Instance.NavigateToNextScreen();
+        }
+        else
+        {
+            SceneManager.LoadScene(nextSceneName);
+        }
     }
 }

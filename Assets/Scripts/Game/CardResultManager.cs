@@ -7,6 +7,8 @@ public class CardResultsHandler : MonoBehaviour
     public float startDelay = 0.5f;      // ⏱ delay before spin starts
     public float spinSpeed = 720f;
     public float shrinkDuration = 0.6f;
+    public GameBoard gameBoard;
+    public BoardRiskManager boardRiskManager;
 
     public void HandleCard(GameObject card)
     {
@@ -50,13 +52,19 @@ public class CardResultsHandler : MonoBehaviour
         // Destroy the card
         Destroy(card);
 
-        // ✅ Disable this CardResultsHandler GameObject
-        gameObject.SetActive(false);
     }
 
     private void ActivateCard()
     {
-        // Placeholder logic
-        Debug.Log("ActivateCard() called");
+        boardRiskManager.AddRandomRiskToRandomCell();
+        
+        if (GameFlowManager.Instance != null)
+        {
+            GameFlowManager.Instance.OnNextPhaseButtonClicked();
+        }
+        else
+        {
+            Debug.LogError("[CardResultsHandler] GameFlowManager.Instance is NULL.");
+        }
     }
 }
