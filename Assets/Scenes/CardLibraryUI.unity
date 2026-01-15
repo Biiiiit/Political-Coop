@@ -338,6 +338,54 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1280254949
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1280254951}
+  - component: {fileID: 1280254950}
+  m_Layer: 0
+  m_Name: GameFlowManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1280254950
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1280254949}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f4979f5034dd9c46acde525f8d7d1e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameFlowManager
+  gameplayScenes:
+  - GameScreen
+  - GameBoard
+  loop: 1
+--- !u!4 &1280254951
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1280254949}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 425.21234, y: 113.3458, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1540543412
 GameObject:
   m_ObjectHideFlags: 0
@@ -447,7 +495,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1778919585118536755, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
       propertyPath: proceedSceneName
-      value: Screens
+      value: GameScreen
       objectReference: {fileID: 0}
     - target: {fileID: 1778919585118536755, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
       propertyPath: createCardSceneName
@@ -593,6 +641,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6310298512291253066, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1280254950}
+    - target: {fileID: 6310298512291253066, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: StartGameplayFlow
+      objectReference: {fileID: 0}
+    - target: {fileID: 6310298512291253066, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: GameFlowManager, Assembly-CSharp
+      objectReference: {fileID: 0}
     - target: {fileID: 6878939041505530521, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -0.0003037713
@@ -627,7 +687,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8187077074295269927, guid: dfa2eb59c9420b140b1393a2d03aaded, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -0.000579834
+      value: -0.0005493164
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -653,3 +713,4 @@ SceneRoots:
   - {fileID: 299808197}
   - {fileID: 1073818362169724624}
   - {fileID: 1540543415}
+  - {fileID: 1280254951}
