@@ -5,11 +5,9 @@ public class CircleSpawnerTMP : MonoBehaviour
 {
     [Header("Prefabs")]
     public GameObject positiveCirclePrefab;  // green
-    public GameObject negativeCirclePrefab;  // red
 
     [Header("Dropdowns")]
     public TMP_Dropdown positiveDropdown;    // number of positive points
-    public TMP_Dropdown negativeDropdown;    // number of negative points
 
     private void Start()
     {
